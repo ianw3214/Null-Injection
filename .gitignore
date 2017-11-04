@@ -1,0 +1,6 @@
+Debug/
+Engine/
+# IGNORE SOME VS THINGS
+.vs/
+*.filters
+*.user

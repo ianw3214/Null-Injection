@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FusionBlitz", "FusionBlitz.vcxproj", "{73CCB447-EB62-4581-8A16-B8C62F2EE941}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{73CCB447-EB62-4581-8A16-B8C62F2EE941}.Debug|x64.ActiveCfg = Debug|x64
+		{73CCB447-EB62-4581-8A16-B8C62F2EE941}.Debug|x64.Build.0 = Debug|x64
+		{73CCB447-EB62-4581-8A16-B8C62F2EE941}.Debug|x86.ActiveCfg = Debug|Win32
+		{73CCB447-EB62-4581-8A16-B8C62F2EE941}.Debug|x86.Build.0 = Debug|Win32
+		{73CCB447-EB62-4581-8A16-B8C62F2EE941}.Release|x64.ActiveCfg = Release|x64
+		{73CCB447-EB62-4581-8A16-B8C62F2EE941}.Release|x64.Build.0 = Release|x64
+		{73CCB447-EB62-4581-8A16-B8C62F2EE941}.Release|x86.ActiveCfg = Release|Win32
+		{73CCB447-EB62-4581-8A16-B8C62F2EE941}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E517A75A-D7E7-4491-BE82-2FA3502EEFF1}
+	EndGlobalSection
+EndGlobal
