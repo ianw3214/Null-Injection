@@ -1,9 +1,13 @@
 #pragma once
 
-#include <string>
+#include <vector>
 
 #include "QcEngine.h"
+#include "../constants.h"
 #include "../entities/player.h"
+
+#define CAM_SPEED 300
+#define CAM_MARGIN 30
 
 class Game : public State {
 
@@ -20,5 +24,11 @@ public:
 private:
 
 	Player * player;
+	// rectangle to represent the camera
+	int camX, camY;
 
+	std::vector<Shape*> mapCollisions;
+
+	// helper methods
+	void updateCameraPosition(Uint32 delta);
 };

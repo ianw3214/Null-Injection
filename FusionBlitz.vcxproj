@@ -131,6 +131,7 @@
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\constants.h" />
     <ClInclude Include="src\entities\player.h" />
     <ClInclude Include="src\states\game.h" />
   </ItemGroup>
