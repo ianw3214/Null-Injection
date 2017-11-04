@@ -5,9 +5,10 @@
 #include "QcEngine.h"
 #include "../constants.h"
 #include "../entities/player.h"
+#include "../entities/map.h"
 
 #define CAM_SPEED 300
-#define CAM_MARGIN 30
+#define CAM_MARGIN 100
 
 class Game : public State {
 
@@ -24,6 +25,7 @@ public:
 private:
 
 	Player * player;
+	Map * middleMap;
 	// rectangle to represent the camera
 	int camX, camY;
 

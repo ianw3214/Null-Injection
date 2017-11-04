@@ -126,13 +126,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\entities\map.cpp" />
     <ClCompile Include="src\entities\player.cpp" />
+    <ClCompile Include="src\graphics\effect.cpp" />
     <ClCompile Include="src\states\game.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\constants.h" />
+    <ClInclude Include="src\entities\map.h" />
     <ClInclude Include="src\entities\player.h" />
+    <ClInclude Include="src\graphics\effect.h" />
     <ClInclude Include="src\states\game.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
