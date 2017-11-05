@@ -60,6 +60,11 @@ void Player::move(int dir) {
 void Player::jump() {
 	// make sure the player can jump before actually jumping
 	if (canJump && jumpTimer == 0 && !rolling) {
+		// if we are not on the ground, it is a wall jump
+		if (!onGround) {
+			nextAnim = currentAnimation;
+			changeAnimation(faceRight ? WALL_JUMP_RIGHT : WALL_JUMP_LEFT);
+		}
 		yVelocity = JUMP_HEIGHT;
 		onGround = false;
 		canJump = false;
@@ -96,6 +101,7 @@ bool Player::attack() {
 	effects.push_back(effect);
 	// create an attack message and send it to the messager
 	AttackMessage message = AttackMessage(ENEMY, 1, new Rectangle(effectX, position.y - 36, 100, 100));
+	message.recoilRight = faceRight;
 	attackMessager->addMessage(message);
 	// play a sound
 	Audio::playTrack("assets/sfx/kick.wav", 1, false);
@@ -158,6 +164,13 @@ void Player::update(float delta) {
 	else {
 		moveHelp(0, static_cast<int>(yVelocity));
 	}
+	// calculate recoils
+	if (recoilTimer > 0) {
+		recoilTimer -= static_cast<int>(delta);
+		if (recoilTimer < 0) recoilTimer = 0;
+		float percentage = static_cast<float>(recoilTimer) / static_cast<float>(PLAYER_RECOIL_BAR);
+		moveHelp(recoilFaceRight ? 1 : 3, static_cast<int>(PLAYER_RECOIL_SPEED * delta / 1000 * percentage));
+	}
 	// update animations based on move states
 	onGround = detectOnGround();
 	if (!rolling && !attacking) {
@@ -178,11 +191,14 @@ void Player::update(float delta) {
 			canJump = true;
 		}
 		else {
-			if (faceRight) {
-				changeAnimation(JUMP_RIGHT);
-			}
-			else {
-				changeAnimation(JUMP_LEFT);
+			// don't override wall jump animations
+			if (currentAnimation != WALL_JUMP_RIGHT && currentAnimation != WALL_JUMP_LEFT) {
+				if (faceRight) {
+					changeAnimation(JUMP_RIGHT);
+				}
+				else {
+					changeAnimation(JUMP_LEFT);
+				}
 			}
 		}
 	}
@@ -239,9 +255,11 @@ void Player::setCamY(int y) {
 	camY = y;
 }
 
-void Player::takeDamage(int dmg) {
+void Player::takeDamage(int dmg, bool right) {
 	if (invincibleTimer == 0) {
 		health -= dmg;
+		recoilTimer = PLAYER_RECOIL_BAR;
+		recoilFaceRight = right;
 		if (health <= 0) {
 			DEAD = true;
 			changeAnimation(faceRight ? DEATH_RIGHT : DEATH_LEFT);
@@ -261,7 +279,7 @@ Rectangle Player::getCollisionBox() const {
 
 void Player::setupAtlas() {
 	// rows
-	for (int i = 0; i < 13; i++) {
+	for (int i = 0; i < 15; i++) {
 		// columns
 		for (int j = 0; j < 8; j++) {
 			texture->getAtlas().emplace_back(Rectangle(j * 64, i * 64, 64, 64));
@@ -283,6 +301,8 @@ void Player::setupAnimations() {
 	animations[10] = { 80, 85 };
 	animations[11] = { 88, 93 };
 	animations[12] = { 96, 102 };
+	animations[13] = { 104, 109 };
+	animations[14] = { 112, 117 };
 	statePlayOnce[0] = false;
 	statePlayOnce[1] = false;
 	statePlayOnce[2] = false;
@@ -296,6 +316,8 @@ void Player::setupAnimations() {
 	statePlayOnce[10] = true;
 	statePlayOnce[11] = true;
 	statePlayOnce[12] = false;
+	statePlayOnce[13] = true;
+	statePlayOnce[14] = true;
 	nextAnim = IDLE_RIGHT;
 }
 

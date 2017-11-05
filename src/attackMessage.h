@@ -16,6 +16,8 @@ struct AttackMessage {
 	Target target;
 	int damage;
 	Shape * collisionBox;
+	// contain a source position
+	bool recoilRight;
 	AttackMessage() : target(ENEMY), damage(1), collisionBox(new Rectangle()) {}
 	AttackMessage(Target t, int d, Shape* s) : target(t), damage(d), collisionBox(s) {}
 };

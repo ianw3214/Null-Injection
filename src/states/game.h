@@ -52,6 +52,11 @@
 #define WIN_TEXT_BLINK_TIME 450
 #define CAN_GOTO_NEXT_LEVEL 1000
 
+#define TIMER_TEXT_X 250
+#define TIMER_TEXT_Y 50
+#define TIMER_MS_TEXT_X 450
+#define TIMER_MS_TEXT_Y 70
+
 class Game : public State {
 
 public:
@@ -133,4 +138,13 @@ private:
 	Texture * white;
 	Texture * stageBeatText3;
 	int levelBeatTime;
+	
+	// level timer
+	bool timerOn;
+	int cTimer, timerStart;
+	void renderTimer();
+
+	// keep track of the next level
+	std::string next;
+	void nextLevel();
 };

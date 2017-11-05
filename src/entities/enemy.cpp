@@ -91,6 +91,13 @@ void Enemy::update(float delta) {
 			changeAnimation(MOVE_LEFT);
 			moveHelp(3, static_cast<int>(ENEMY_SPEED * delta / 1000));
 		}
+		// calculate recoils
+		if (recoilTimer > 0) {
+			recoilTimer -= static_cast<int>(delta);
+			if (recoilTimer < 0) recoilTimer = 0;
+			float percentage = static_cast<float>(recoilTimer) / static_cast<float>(RECOIL_BAR);
+			moveHelp(recoilFaceRight ? 1 : 3, static_cast<int>(RECOIL_SPEED * delta / 1000 * percentage));
+		}
 		// check if we should attack if we aren't already
 		if ((action != ACTION_ATTACK_RIGHT) && (action != ACTION_ATTACK_LEFT) && (action != ACTION_CHARGE_RIGHT) && (action != ACTION_CHARGE_LEFT)) {
 			Line leftCollision = Line(position.x - 200, position.y + 32, position.x, position.y + 32);
@@ -283,14 +290,19 @@ void Enemy::attack(bool right) {
 	effects.push_back(effect);
 	// create an attack message and send it to the messager
 	AttackMessage message = AttackMessage(PLAYER, 1, new Rectangle(effectX, position.y, 200, 64));
+	message.recoilRight = faceRight;
 	attackMessager->addMessage(message);
 	// play the laser sound
 	Audio::playTrack("assets/sfx/laser.wav", 1, false);
 }
 
-bool Enemy::takeDamage(int dmg) {
+bool Enemy::takeDamage(int dmg, bool right) {
 	if (DEAD) return false;
+	// if we are being recoiled, don't take damage
+	if (recoilTimer > 0) return false;
 	health -= dmg;
+	recoilTimer = RECOIL_BAR;
+	recoilFaceRight = right;
 	if (health <= 0) {
 		DEAD = true;
 		changeAnimation(faceRight ? DEATH_RIGHT : DEATH_LEFT);

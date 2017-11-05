@@ -8,16 +8,19 @@
 #include "../graphics/effect.h"
 #include "../constants.h"
 
-#define NUM_ANIMATIONS 13
+#define NUM_ANIMATIONS 15
 #define SPEED 300
 #define JUMP_HEIGHT 8.f
 #define JUMP_COOLDOWN 300
 #define ROLL_TIME 450
 #define ROLL_SPEED_MODIFIER 2
 #define ATTACK_TIME 300
-#define PLAYER_HEALTH 3
+#define PLAYER_HEALTH 5
 #define INVINCIBLE_TIME 300
 #define HIT_BOX_MARGIN_X 10
+
+#define PLAYER_RECOIL_BAR 300
+#define PLAYER_RECOIL_SPEED 700
 
 class Player : public Entity {
 
@@ -41,7 +44,9 @@ class Player : public Entity {
 		ATTACK_LEFT = 9,
 		DEATH_RIGHT = 10,
 		DEATH_LEFT = 11,
-		DEATH_IDLE = 12
+		DEATH_IDLE = 12,
+		WALL_JUMP_RIGHT = 13,
+		WALL_JUMP_LEFT = 14
 	};
 	bool statePlayOnce[NUM_ANIMATIONS];
 	int nextAnim;
@@ -63,7 +68,7 @@ public:
 	void setCamX(int x);
 	void setCamY(int y);
 
-	void takeDamage(int dmg);
+	void takeDamage(int dmg, bool right);
 	int getHealth() const;
 
 	Rectangle getCollisionBox() const;
@@ -115,4 +120,8 @@ private:
 	// keep track of effects and handle rendering them
 	std::vector<Effect*> effects;
 	SDL_Renderer * renderer;
+
+	// add a recoil effect
+	int recoilTimer;
+	bool recoilFaceRight;
 };

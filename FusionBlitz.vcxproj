@@ -133,6 +133,7 @@
     <ClCompile Include="src\entities\player.cpp" />
     <ClCompile Include="src\graphics\effect.cpp" />
     <ClCompile Include="src\states\deathState.cpp" />
+    <ClCompile Include="src\states\finalState.cpp" />
     <ClCompile Include="src\states\game.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\states\menu.cpp" />
@@ -147,6 +148,7 @@
     <ClInclude Include="src\entities\player.h" />
     <ClInclude Include="src\graphics\effect.h" />
     <ClInclude Include="src\states\deathState.h" />
+    <ClInclude Include="src\states\finalState.h" />
     <ClInclude Include="src\states\game.h" />
     <ClInclude Include="src\states\menu.h" />
   </ItemGroup>

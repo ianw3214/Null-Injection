@@ -1,5 +1,6 @@
 #include "game.h"
 #include "deathState.h"
+#include "finalState.h"
 
 Game::Game() {
 	mapFile = "maps/tut.txt";
@@ -86,10 +87,16 @@ void Game::init() {
 	stateManager->createFont("stageBeatTitle", "assets/fonts/munro/Munro.ttf", 96, Colour(255, 255, 255));
 	stageBeatText1 = new Texture(stateManager->getTextTexture("STAGE", "stageBeatTitle"));
 	stageBeatText2 = new Texture(stateManager->getTextTexture("COMPLETE", "stageBeatTitle"));
-	stageBeatText3 = new Texture(stateManager->getTextTexture("Press SPACE to proceed...", "deathText"));
+	stageBeatText3 = new Texture(stateManager->getTextTexture("Press Z to proceed...", "deathText"));
 	white = new Texture("assets/white.png", renderer);
 	stageBeatText1->setAlpha(0);
 	stageBeatText2->setAlpha(0);
+
+	stateManager->createFont("timer", "assets/fonts/munro/Munro.ttf", 64, Colour(155, 155, 155));
+	stateManager->createFont("timerSmall", "assets/fonts/munro/Munro.ttf", 32, Colour(155, 155, 155));
+	timerStart = SDL_GetTicks();
+	cTimer = 0;
+	timerOn = false;
 
 }
 
@@ -210,7 +217,7 @@ void Game::update(Uint32 delta) {
 		if (timeDiff > CAN_GOTO_NEXT_LEVEL) {
 			if (keyPressed(SDL_SCANCODE_RETURN) || keyPressed(SDL_SCANCODE_Z)) {
 				SDL_Delay(200);
-				stateManager->changeState(new Game());
+				nextLevel();
 			}
 		}
 		// don't return for a complete stage, just add more functionalities
@@ -294,6 +301,10 @@ void Game::update(Uint32 delta) {
 		shakeTimer = DEATH_SHAKE_TIME;
 		intensity = DEATH_SHAKE_INTENSITY;
 	}
+	// update the timer
+	if (miniState == NORMAL && !timerOn) timerOn = true;
+	else timerOn = false;
+	if (timerOn) cTimer = SDL_GetTicks() - timerStart;
 }
 
 void Game::render(SDL_Renderer * renderer) {
@@ -332,6 +343,7 @@ void Game::render(SDL_Renderer * renderer) {
 		return;
 	}
 	renderPlayerHealth();
+	renderTimer();
 	State::render(renderer);
 }
 
@@ -345,13 +357,13 @@ void Game::processAndPopNextMessage() {
 	AttackMessage message = attackMessager->dequeue();
 	if (message.target == PLAYER) {
 		if (isColliding(*message.collisionBox, player->getCollisionBox()))
-			player->takeDamage(message.damage);
+			player->takeDamage(message.damage, message.recoilRight);
 	}
 	if (message.target == ENEMY) {
 		// damage the enemies
 		for (Enemy * e : enemies) {
 			if (isColliding(*(message.collisionBox), e->collisionBox)) {
-				if (e->takeDamage(message.damage)) {
+				if (e->takeDamage(message.damage, message.recoilRight)) {
 					killedEnemies++;
 				}
 			}
@@ -398,6 +410,7 @@ std::vector<std::string> Game::split(std::string str, char delimiter) {
 }
 
 void Game::loadFromFile(std::string path) {
+	next = "";
 	std::ifstream mapFile(path.c_str());
 	if (mapFile.is_open()) {
 		std::string line;
@@ -429,5 +442,45 @@ void Game::loadFromFile(std::string path) {
 	else {
 		ERR("Failed to open map file: " << path);
 		return;
+	}
+	// use a default map if the next map is not set
+	if (next == "") {
+		next = "FINISH";
+	}
+}
+
+void Game::renderTimer() {
+	// rounds down
+	int seconds_rep = cTimer / 1000;
+	int minutes = seconds_rep / 60;
+	int minutes_tens = minutes / 10;
+	int minutes_ones = minutes % 10;
+	int seconds = seconds_rep % 60;
+	int seconds_ones = seconds % 10;
+	int seconds_tens = seconds / 10;
+	std::string time_str = "";
+	time_str += static_cast<char>(48 + minutes_tens);
+	time_str += static_cast<char>(48 + minutes_ones);
+	time_str += " : ";
+	time_str += static_cast<char>(48 + seconds_tens);
+	time_str += static_cast<char>(48 + seconds_ones);
+	Texture text(stateManager->getTextTexture(time_str, "timer"));
+	text.render(renderer, TIMER_TEXT_X, TIMER_TEXT_Y);
+	// also render milliseconds
+	int ms_tens = (cTimer / 100) % 10;
+	int ms_ones = (cTimer / 10) % 10;
+	std::string ms_str = "";
+	ms_str += static_cast<char>(48 + ms_tens);
+	ms_str += static_cast<char>(48 + ms_ones);
+	Texture text2(stateManager->getTextTexture(ms_str, "timerSmall"));
+	text2.render(renderer, TIMER_MS_TEXT_X, TIMER_MS_TEXT_Y);
+}
+
+void Game::nextLevel() {
+	if (next == "FINISH") {
+		stateManager->changeState(new FinalState(cTimer));
+	}
+	else {
+		stateManager->changeState(new Game());
 	}
 }

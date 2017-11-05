@@ -16,6 +16,9 @@
 #define ATTACK_CHARGE 1000
 #define ATTACK_TIMER 300
 
+#define RECOIL_BAR 300
+#define RECOIL_SPEED 500
+
 class Enemy : public Entity {
 
 	// data structures and array to hold animation info
@@ -65,7 +68,7 @@ public:
 	void setCamY(int y);
 
 	void attack(bool right);
-	bool takeDamage(int dmg);
+	bool takeDamage(int dmg, bool right);
 	bool DEAD;
 	bool REMOVE;
 	int removeTimer;
@@ -110,4 +113,8 @@ private:
 	// keep track of effects and handle rendering them
 	std::vector<Effect*> effects;
 	SDL_Renderer * renderer;
+
+	// add a recoil effect
+	int recoilTimer;
+	bool recoilFaceRight;
 };
