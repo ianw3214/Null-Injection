@@ -11,6 +11,8 @@ Game::Game(std::string path) {
 }
 
 Game::~Game() {
+	delete black;
+	delete red;
 	delete middleMap;
 	delete bgMap;
 	delete attackMessager;
@@ -73,6 +75,13 @@ void Game::init() {
 
 	shakeTimer = 0;
 
+	// death things
+	stateManager->createFont("deathTitle", "assets/fonts/munro/Munro.ttf", 96, Colour(255, 0, 0));
+	red = new Texture("assets/red.png", renderer);
+	deathText = new Texture(stateManager->getTextTexture("You Died...", "deathTitle"));
+	stateManager->createFont("deathText", "assets/fonts/munro/Munro.ttf", 44, Colour(205, 205, 205));
+	nextStateText = new Texture(stateManager->getTextTexture("Press SPACE to continue...", "deathText"));
+
 }
 
 void Game::cleanUp() {
@@ -95,7 +104,7 @@ void Game::update(Uint32 delta) {
 			currentFadeTime = introFadeTimes[currentFade];
 			currentFade++;
 			// check if we are done the intro
-			if (currentFade >= introFadeTimes.size()) {
+			if ((unsigned int)currentFade >= introFadeTimes.size()) {
 				miniState = NORMAL;
 			}
 		}
@@ -109,10 +118,6 @@ void Game::update(Uint32 delta) {
 	// play the death state first if set
 	if (miniState == DEATH) {
 		int timeDiff = SDL_GetTicks() - deathStartTime;
-		if (keyPressed(SDL_SCANCODE_SPACE) || keyPressed(SDL_SCANCODE_RETURN) || keyPressed(SDL_SCANCODE_Z)) {
-			SDL_Delay(200);
-			stateManager->changeState(new DeathMenu());
-		}
 		// update first few frames in slow motion
 		if (numSlowMoFrames < NUM_SLOW_MO_FRAMES) {
 			deathSlowMoFrameCounter--;
@@ -123,11 +128,53 @@ void Game::update(Uint32 delta) {
 				return;
 			}
 		}
+		// update red overlay
+		float alphaPercentage = 1.f - static_cast<float>(timeDiff) / static_cast<float>(RED_OVERLAY_PERSIST_AFTER);
+		if (alphaPercentage < 0.5f) alphaPercentage = 0.5f;
+		red->setAlpha(static_cast<int>(alphaPercentage * 255));
 		// keep updating player animations
-		player->updateAnimation(delta);
+		player->updateAnimation(static_cast<float>(delta));
 		// keep updating enemies
 		for (Enemy * e : enemies) {
-			e->updateSimple(delta);
+			e->updateSimple(static_cast<float>(delta));
+		}
+		// update camera shake timer with trailing intensity
+		if (shakeTimer > 0) {
+			float shakePercent = 1.f - static_cast<float>(timeDiff) / static_cast<float>(DEATH_SHAKE_TIME);
+			if (shakePercent < .1f) shakePercent = .1f;
+			int newIntensity = static_cast<int>(shakePercent * intensity);
+			camOffsetX = randomNumber(newIntensity) - newIntensity / 2;
+			camOffsetY = randomNumber(newIntensity) - newIntensity / 2;
+			shakeTimer -= delta;
+		}
+		else {
+			camOffsetX = 0;
+			camOffsetY = 0;
+		}
+		// update title text alpha
+		float titleAlpha = 1.f;
+		if (timeDiff >= SHOW_TITLE_AT && timeDiff <= TITLE_FULL_AT)
+			titleAlpha = static_cast<float>(timeDiff - SHOW_TITLE_AT) / static_cast<float>(TITLE_FULL_AT - SHOW_TITLE_AT);
+		deathText->setAlpha(static_cast<int>(titleAlpha * 255));
+		if (timeDiff > TITLE_FULL_AT) {
+			if (keyPressed(SDL_SCANCODE_SPACE) || keyPressed(SDL_SCANCODE_RETURN) || keyPressed(SDL_SCANCODE_Z)) {
+				SDL_Delay(200);
+				stateManager->changeState(new DeathMenu());
+			}
+		}
+		if (timeDiff > SHOW_DEATH_TEXT_AT) {
+			bool on = static_cast<int>((timeDiff - SHOW_DEATH_TEXT_AT)/ DEATH_TEXT_BLINK_TIME) % 2 == 0;
+			nextStateText->setAlpha(on ? 255 : 0);
+		}
+		return;
+	}
+	// play the stage complete state if set
+	if (miniState == COMPLETE) {
+		// keep updating player animations
+		player->updateAnimation(static_cast<float>(delta));
+		// keep updating enemies
+		for (Enemy * e : enemies) {
+			e->updateSimple(static_cast<float>(delta));
 		}
 		return;
 	}
@@ -190,12 +237,19 @@ void Game::update(Uint32 delta) {
 		processAndPopNextMessage();
 	}
 	// go to death menu if player died
-	// TODO: make transition smoother
 	if (player->getHealth() <= 0) {
 		miniState = DEATH;
 		deathStartTime = SDL_GetTicks();
 		deathSlowMoFrameCounter = SLOW_MO_FRAMES;
 		numSlowMoFrames = 0;
+		// add screen shake
+		shakeTimer = DEATH_SHAKE_TIME;
+		intensity = DEATH_SHAKE_INTENSITY;
+	}
+	// check if player beat the level
+	if (killedEnemies == numEnemies) {
+		levelBeatTime = SDL_GetTicks();
+		miniState = COMPLETE;
 	}
 }
 
@@ -210,6 +264,19 @@ void Game::render(SDL_Renderer * renderer) {
 			e->render(renderer);
 		}
 		black->render(renderer, true);
+		return;
+	}
+	// render specialized things only if playing death transition
+	if (miniState == DEATH) {
+		State::render(renderer);
+		red->render(renderer, true);
+		// render the title if a certain amount of time passed
+		if ((SDL_GetTicks() - deathStartTime) > SHOW_TITLE_AT) {
+			deathText->render(renderer, TITLE_X, TITLE_Y);
+		}
+		if (SDL_GetTicks() - deathStartTime > SHOW_DEATH_TEXT_AT) {
+			nextStateText->render(renderer, DEATH_TEXT_X, DEATH_TEXT_Y);
+		}
 		return;
 	}
 	renderPlayerHealth();
@@ -231,8 +298,11 @@ void Game::processAndPopNextMessage() {
 	if (message.target == ENEMY) {
 		// damage the enemies
 		for (Enemy * e : enemies) {
-			if (isColliding(*(message.collisionBox), e->collisionBox))
-				e->takeDamage(message.damage);
+			if (isColliding(*(message.collisionBox), e->collisionBox)) {
+				if (e->takeDamage(message.damage)) {
+					killedEnemies++;
+				}
+			}
 		}
 	}
 }
@@ -281,6 +351,8 @@ void Game::loadFromFile(std::string path) {
 		std::string line;
 		while (getline(mapFile, line)) {
 			std::vector<std::string> tokens = split(line, ' ');
+			// comments
+			if (line[0] == '#') continue;
 			// background data
 			if (line[0] == 'B' && line[1] == 'G') {
 				middleMap = new Map(tokens[1], renderer);
@@ -298,6 +370,7 @@ void Game::loadFromFile(std::string path) {
 				Enemy * enemy = new Enemy(std::stoi(tokens[1]), std::stoi(tokens[2]), &mapCollisions, renderer, attackMessager, player);
 				entities.push_back(enemy);
 				enemies.push_back(enemy);
+				numEnemies++;
 			}
 		}
 	}

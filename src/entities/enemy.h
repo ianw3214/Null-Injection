@@ -65,7 +65,7 @@ public:
 	void setCamY(int y);
 
 	void attack(bool right);
-	void takeDamage(int dmg);
+	bool takeDamage(int dmg);
 	bool DEAD;
 	bool REMOVE;
 	int removeTimer;

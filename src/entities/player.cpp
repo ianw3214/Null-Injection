@@ -207,6 +207,8 @@ void Player::update(float delta) {
 		effects.erase(effects.begin() + index);
 		delete temp;
 	}
+	// update animations
+	updateAnimation(delta);
 }
 
 void Player::updateAnimation(float delta) {

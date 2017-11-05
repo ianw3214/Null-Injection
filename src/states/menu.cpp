@@ -29,6 +29,7 @@ void Menu::init() {
 	black = new Texture("assets/black.png", renderer);
 	fadeOutTimer = 0;
 	fadeOut = false;
+	Audio::mute();
 }
 
 void Menu::cleanUp() {

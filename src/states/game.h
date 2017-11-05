@@ -26,6 +26,19 @@
 #define SWITCH_DEATH_MENU 500
 #define SLOW_MO_FRAMES 3
 #define NUM_SLOW_MO_FRAMES 20
+#define RED_OVERLAY_PERSIST_AFTER 3000
+#define DEATH_SHAKE_TIME 800
+#define DEATH_SHAKE_INTENSITY 50
+#define TITLE_X 50
+#define TITLE_Y 100
+#define SHOW_TITLE_AT 2500
+#define TITLE_FULL_AT 3500
+#define DEATH_TEXT_X 30
+#define DEATH_TEXT_Y 300
+#define SHOW_DEATH_TEXT_AT 4000
+#define DEATH_TEXT_BLINK_TIME 500
+
+
 
 class Game : public State {
 
@@ -70,11 +83,13 @@ private:
 	enum MiniState {
 		NORMAL = 0,
 		INTRO = 1,
-		DEATH = 2
+		DEATH = 2,
+		COMPLETE = 3
 	};
 
 	// 0: NORMAL
 	// 1: INTRO
+	// 2: STAGE COMPLETED
 	int miniState;
 
 	// fading variables
@@ -90,7 +105,16 @@ private:
 	int intensity;
 
 	// death transition variables
+	Texture * red;
+	Texture * deathText;
+	Texture * nextStateText;
 	int deathStartTime;
 	int deathSlowMoFrameCounter;
 	int numSlowMoFrames;
+
+	// keep track of winning the level
+	int numEnemies, killedEnemies;
+	
+	// beat level variables
+	int levelBeatTime;
 };

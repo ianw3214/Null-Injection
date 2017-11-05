@@ -288,14 +288,16 @@ void Enemy::attack(bool right) {
 	Audio::playTrack("assets/sfx/laser.wav", 1, false);
 }
 
-void Enemy::takeDamage(int dmg) {
-	if (DEAD) return;
+bool Enemy::takeDamage(int dmg) {
+	if (DEAD) return false;
 	health -= dmg;
 	if (health <= 0) {
 		DEAD = true;
 		changeAnimation(faceRight ? DEATH_RIGHT : DEATH_LEFT);
 		nextAnim = BLANK;
+		return true;
 	}
+	return false;
 }
 
 void Enemy::setupAtlas() {
