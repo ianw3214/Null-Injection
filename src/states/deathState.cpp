@@ -1,24 +1,24 @@
+#include "deathState.h"
+#include "../audio/audio.h"
 #include "menu.h"
 
-#include "game.h"
-
-Menu::Menu() {
+DeathMenu::DeathMenu() {
 
 }
 
-Menu::~Menu() {
+DeathMenu::~DeathMenu() {
 	// clean up textures
 	for (Texture * t : menuItems) {
 		delete t;
 	}
 }
 
-void Menu::init() {
+void DeathMenu::init() {
 	currentItem = 0;
 	keyUpTimer = 0;
 	keyDownTimer = 0;
 	stateManager->createFont("menuItem", "assets/fonts/munro/Munro.ttf", 64, Colour(200, 200, 200));
-	Texture * texture1 = new Texture(stateManager->getTextTexture("PLAY", "menuItem"));
+	Texture * texture1 = new Texture(stateManager->getTextTexture("MENU", "menuItem"));
 	menuItems.push_back(texture1);
 	Texture * texture2 = new Texture(stateManager->getTextTexture("TEMP", "menuItem"));
 	menuItems.push_back(texture2);
@@ -27,11 +27,11 @@ void Menu::init() {
 	updateMenuItems();
 }
 
-void Menu::cleanUp() {
+void DeathMenu::cleanUp() {
 
 }
 
-void Menu::update(Uint32 delta) {
+void DeathMenu::update(Uint32 delta) {
 	State::update(delta);
 	if (keyPressed(SDL_SCANCODE_UP) && keyUpTimer == 0) {
 		currentItem = currentItem == 0 ? currentItem : currentItem - 1;
@@ -61,14 +61,14 @@ void Menu::update(Uint32 delta) {
 	}
 }
 
-void Menu::render(SDL_Renderer * renderer) {
+void DeathMenu::render(SDL_Renderer * renderer) {
 	State::render(renderer);
 	for (unsigned int i = 0; i < menuItems.size(); ++i) {
 		menuItems.at(i)->render(renderer, 20, 64 * i + 230);
 	}
 }
 
-void Menu::updateMenuItems() {
+void DeathMenu::updateMenuItems() {
 	for (unsigned int i = 0; i < menuItems.size(); ++i) {
 		if (i == currentItem) {
 			menuItems.at(i)->setColourModulation(Colour(255, 0, 0));
@@ -79,12 +79,12 @@ void Menu::updateMenuItems() {
 	}
 }
 
-void Menu::select() {
+void DeathMenu::select() {
 	// play the big menu blip sound
 	Audio::playTrack("assets/sfx/bigMenuBlip.wav", 1, false);
 	switch (currentItem) {
 	case 0: {
-		stateManager->changeState(new Game());
+		stateManager->changeState(new Menu());
 	} break;
 	case 1: {
 		LOG("LOL");
@@ -93,7 +93,7 @@ void Menu::select() {
 		stateManager->exit();
 	} break;
 	default: {
-		ERR("Menu item selection out of range.");
+		ERR("DeathMenu item selection out of range.");
 	}
 	}
 }

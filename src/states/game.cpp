@@ -1,4 +1,5 @@
 #include "game.h"
+#include "deathState.h"
 
 Game::Game() {
 
@@ -55,7 +56,7 @@ void Game::init() {
 }
 
 void Game::cleanUp() {
-	
+	// stop playing music
 }
 
 void Game::update(Uint32 delta) {
@@ -103,6 +104,11 @@ void Game::update(Uint32 delta) {
 	// update attacks and their effects to enemies
 	while (attackMessager->hasMessage()) {
 		processAndPopNextMessage();
+	}
+	// go to death menu if player died
+	// TODO: make transition smoother
+	if (player->getHealth() <= 0) {
+		stateManager->changeState(new DeathMenu());
 	}
 }
 
