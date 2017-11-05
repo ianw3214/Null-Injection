@@ -1,6 +1,7 @@
 #include "player.h"
 
-Player::Player(SDL_Renderer * renderer, std::vector<Shape*>* inputMap, int _x, int _y) {
+Player::Player(SDL_Renderer * renderer, std::vector<Shape*>* inputMap, int _x, int _y, AttackMessager * messager) {
+	attackMessager = messager;
 	// create the player texture
 	createTexture("assets/player.png", renderer);
 	// setup atlas/spritesheet of player
@@ -31,6 +32,8 @@ Player::Player(SDL_Renderer * renderer, std::vector<Shape*>* inputMap, int _x, i
 	collisionBox = Rectangle(position.x, position.y, 64, 64);
 	// save the renderer in the player class to create effects
 	this->renderer = renderer;
+	health = PLAYER_HEALTH;
+	invincibleTimer = 0;
 }
 
 Player::~Player() {
@@ -70,6 +73,7 @@ void Player::roll() {
 	rolling = true;
 	changeAnimation(faceRight ? ROLL_RIGHT : ROLL_LEFT);
 	nextAnim = faceRight ? IDLE_RIGHT : IDLE_LEFT;
+	invincibleTimer = INVINCIBLE_TIME;
 }
 
 void Player::attack() {
@@ -86,6 +90,9 @@ void Player::attack() {
 	effect->setCamY(camY);
 	effect->initAtlasTexture();
 	effects.push_back(effect);
+	// create an attack message and send it to the messager
+	AttackMessage message = AttackMessage(ENEMY, 1, new Rectangle(effectX, position.y - 36, 100, 100));
+	attackMessager->addMessage(message);
 }
 
 void Player::render(SDL_Renderer * renderer) {
@@ -100,6 +107,11 @@ void Player::render(SDL_Renderer * renderer) {
 }
 
 void Player::update(float delta) {
+	// update invincible timer
+	if (invincibleTimer > 0) {
+		invincibleTimer -= static_cast<int>(delta);
+		if (invincibleTimer < 0) invincibleTimer = 0;
+	}
 	// update jump timer
 	if (jumpTimer > 0) {
 		if (jumpTimer <= delta) jumpTimer = 0;
@@ -215,6 +227,24 @@ void Player::setCamY(int y) {
 	camY = y;
 }
 
+void Player::takeDamage(int dmg) {
+	if (invincibleTimer == 0) {
+		health -= dmg;
+		if (health <= 0) {
+			DEAD = true;
+		}
+		invincibleTimer = INVINCIBLE_TIME;
+	}
+}
+
+int Player::getHealth() const {
+	return health;
+}
+
+Rectangle Player::getCollisionBox() const {
+	return collisionBox;
+}
+
 void Player::setupAtlas() {
 	// rows
 	for (int i = 0; i < 10; i++) {
@@ -234,7 +264,7 @@ void Player::setupAnimations() {
 	animations[5] = { 40, 40 };
 	animations[6] = { 48, 55 };
 	animations[7] = { 56, 63 };
-	animations[8] = { 64, 71 };
+	animations[8] = { 64, 69 };
 	animations[9] = { 72, 77 };
 	statePlayOnce[0] = false;
 	statePlayOnce[1] = false;

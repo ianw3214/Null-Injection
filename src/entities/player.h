@@ -4,17 +4,19 @@
 #include <algorithm>
 
 #include "QcEngine.h"
+#include "../attackMessage.h"
 #include "../graphics/effect.h"
+#include "../constants.h"
 
 #define NUM_ANIMATIONS 10
-#define GRAVITY 20
 #define SPEED 300
 #define JUMP_HEIGHT 8.f
 #define JUMP_COOLDOWN 300
-#define ANIMATION_INTERVAL 5
-#define ROLL_TIME 500
+#define ROLL_TIME 450
 #define ROLL_SPEED_MODIFIER 2
 #define ATTACK_TIME 300
+#define PLAYER_HEALTH 5
+#define INVINCIBLE_TIME 300
 
 class Player : public Entity {
 
@@ -42,7 +44,7 @@ class Player : public Entity {
 
 public:
 
-	Player(SDL_Renderer * renderer, std::vector<Shape*>* inputMap, int _x, int _y);
+	Player(SDL_Renderer * renderer, std::vector<Shape*>* inputMap, int _x, int _y, AttackMessager * messager);
 	~Player();
 
 	void move(int dir);
@@ -56,7 +58,16 @@ public:
 	void setCamX(int x);
 	void setCamY(int y);
 
+	void takeDamage(int dmg);
+	int getHealth() const;
+
+	Rectangle getCollisionBox() const;
+
 private:
+
+	AttackMessager * attackMessager;
+	bool DEAD;
+	int health;
 
 	int camX, camY;
 
@@ -76,6 +87,7 @@ private:
 	Uint32 rollCoolDown;
 	bool attacking;
 	Uint32 attackCoolDown;
+	int invincibleTimer;
 
 	// helper functions to reduce clutter in constructor
 	void setupAtlas();

@@ -6,14 +6,18 @@ Game::Game() {
 
 Game::~Game() {
 	delete middleMap;
+	delete attackMessager;
 }
 
 void Game::init() {
 	// hide the cursor
 	// showCursor(false);
 
+	// initialzie the messager
+	attackMessager = new AttackMessager(player, &enemies);
+
 	// instantiate a new player
-	player = new Player(renderer, &mapCollisions, 500, 500);
+	player = new Player(renderer, &mapCollisions, 500, 500, attackMessager);
 	entities.push_back(player);
 
 	// setup the map colliisons
@@ -29,6 +33,16 @@ void Game::init() {
 
 	// setup the map
 	middleMap = new Map("assets/map.png", renderer);
+
+	// add an enemy
+	for (int i = 0; i < 5; i++) {
+		Enemy * enemy = new Enemy(randomNumber(1000), 0, &mapCollisions, renderer, attackMessager, player);
+		entities.push_back(enemy);
+		enemies.push_back(enemy);
+	}
+
+	// initialize static textures
+	healthTexture = std::make_unique<Texture>("assets/heart.png", renderer);
 }
 
 void Game::cleanUp() {
@@ -58,12 +72,57 @@ void Game::update(Uint32 delta) {
 	// update camera settings of each entity
 	player->setCamX(camX);
 	player->setCamY(camY);
+	std::vector<Enemy*> removeEnemies;
+	// update camera settings of each enemy and check if we should remove them
+	for (Enemy * e : enemies) {
+		e->setCamX(camX);
+		e->setCamY(camY);
+		if (e->REMOVE) {
+			removeEnemies.push_back(e);
+		}
+	}
+	// remove enemies accordingly
+	for (Enemy * e : removeEnemies) {
+		Enemy * temp = e;
+		auto iter = std::find(enemies.begin(), enemies.end(), e);
+		enemies.erase(iter);
+		Entity * cast = dynamic_cast<Entity*>(e);
+		auto iter2 = std::find(entities.begin(), entities.end(), cast);
+		entities.erase(iter2);
+		delete temp;
+	}
+	// update attacks and their effects to enemies
+	while (attackMessager->hasMessage()) {
+		processAndPopNextMessage();
+	}
 }
 
 void Game::render(SDL_Renderer * renderer) {
 	// render the map first
 	middleMap->render(renderer, camX, camY);
+	renderPlayerHealth();
 	State::render(renderer);
+}
+
+
+void Game::processAndPopNextMessage() {
+	if (!attackMessager->hasMessage()) {
+		ERR("No more messages in queue");
+		return;
+	}
+	// get the message and process it
+	AttackMessage message = attackMessager->dequeue();
+	if (message.target == PLAYER) {
+		if (isColliding(*message.collisionBox, player->getCollisionBox()))
+			player->takeDamage(message.damage);
+	}
+	if (message.target == ENEMY) {
+		// damage the enemies
+		for (Enemy * e : enemies) {
+			if (isColliding(*(message.collisionBox), e->collisionBox))
+				e->takeDamage(message.damage);
+		}
+	}
 }
 
 void Game::updateCameraPosition(Uint32 delta) {
@@ -78,5 +137,11 @@ void Game::updateCameraPosition(Uint32 delta) {
 	}
 	if (camY + SCREEN_HEIGHT < player->getY() + 64 + CAM_MARGIN) {
 		camY = player->getY() + 64 + CAM_MARGIN - SCREEN_HEIGHT;
+	}
+}
+
+void Game::renderPlayerHealth() {
+	for (int i = 0; i < player->getHealth(); ++i) {
+		healthTexture->render(renderer, i * 40 + HEALTH_MARGIN_X, HEALTH_MARGIN_Y);
 	}
 }
