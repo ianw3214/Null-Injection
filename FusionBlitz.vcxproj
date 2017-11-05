@@ -137,6 +137,7 @@
     <ClCompile Include="src\states\game.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\states\menu.cpp" />
+    <ClCompile Include="src\states\transition.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -151,6 +152,7 @@
     <ClInclude Include="src\states\finalState.h" />
     <ClInclude Include="src\states\game.h" />
     <ClInclude Include="src\states\menu.h" />
+    <ClInclude Include="src\states\transition.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="FusionBlitz.rc" />

@@ -2,13 +2,20 @@
 #include "deathState.h"
 #include "finalState.h"
 
-Game::Game() {
+Game::Game(bool resetMusic) {
 	mapFile = "maps/tut.txt";
-	miniState = NORMAL;
+	if (resetMusic) {
+		Audio::playTrack("assets/music/bgm.wav", 0, true);
+		Audio::setVolume(0, SDL_MIX_MAXVOLUME);
+	}
 }
 
-Game::Game(std::string path) {
+Game::Game(std::string path, bool resetMusic) {
 	mapFile = path;
+	if (resetMusic) {
+		Audio::playTrack("assets/music/bgm.wav", 0, true);
+		Audio::setVolume(0, SDL_MIX_MAXVOLUME);
+	}
 }
 
 Game::~Game() {
@@ -17,54 +24,30 @@ Game::~Game() {
 	delete middleMap;
 	delete bgMap;
 	delete attackMessager;
+	delete fadeOutBlack;
 }
 
 void Game::init() {
 	// hide the cursor
 	// showCursor(false);
 
+	miniState = NORMAL;
 	// initialzie the messager
 	attackMessager = new AttackMessager(player, &enemies);
 
-	/*
-	// instantiate a new player
-	player = new Player(renderer, &mapCollisions, 500, 500, attackMessager);
-	entities.push_back(player);
+	// fade out things
+	fadeOutBlack = new Texture("assets/black.png", renderer);
+	fadeOut = false;
+	fadeOutMusic = false;
+	nextReset = false;
+	nextFadeOut = false;
 
-	// setup the map colliisons
-	mapCollisions.emplace_back(new Rectangle(0, 1024, 1024, 50));
-	mapCollisions.emplace_back(new Rectangle(0, 768, 448, 128));
-	mapCollisions.emplace_back(new Rectangle(576, 704, 448, 64));
-	mapCollisions.emplace_back(new Rectangle(768, 576, 256, 128));
-	mapCollisions.emplace_back(new Rectangle(256, 384, 448, 128));
-	mapCollisions.emplace_back(new Rectangle(0, 192, 192, 128));
-	mapCollisions.emplace_back(new Rectangle(0, 0, 64, 1128));
-	mapCollisions.emplace_back(new Rectangle(960, 0, 64, 1128));
-	mapCollisions.emplace_back(new Rectangle(0, -64, 1024, 64));
-
-	// setup the camera
-	camX = 0, camY = 0;
-
-	// setup the map
-	middleMap = new Map("assets/map.png", renderer);
-	bgMap = new Map("assets/map_bg.png", renderer);
-
-	// add an enemy
-	for (int i = 0; i < 5; i++) {
-		Enemy * enemy = new Enemy(randomNumber(1000), 0, &mapCollisions, renderer, attackMessager, player);
-		entities.push_back(enemy);
-		enemies.push_back(enemy);
-	}
-	*/
+	// load the map
 	loadFromFile(mapFile);
 	bgMap = new Map("assets/map_bg.png", renderer);
 
 	// initialize static textures
 	healthTexture = std::make_unique<Texture>("assets/heart.png", renderer);
-
-	// temporarily mute the game
-	// Audio::mute();
-	Audio::playTrack("assets/music/bgm.wav", 0, true);
 
 	if (miniState == INTRO) {
 		black = new Texture("assets/black.png", renderer);
@@ -105,6 +88,23 @@ void Game::cleanUp() {
 }
 
 void Game::update(Uint32 delta) {
+	// if we are fading out, just do that and don't do anything else
+	if (fadeOut) {
+		int timeDiff = SDL_GetTicks() - fadeOutStart;
+		if (timeDiff > FADE_OUT_TIME) {
+			if (miniState == DEATH) stateManager->changeState(new DeathMenu());
+			if (miniState == COMPLETE) nextLevel();
+		}
+		else {
+			float fadePercent = static_cast<float>(timeDiff) / static_cast<float>(FADE_OUT_TIME);
+			fadeOutBlack->setAlpha(static_cast<int>(fadePercent * 255));
+			// fade out music as well
+			if (fadeOutMusic) {
+				Audio::setVolume(0, SDL_MIX_MAXVOLUME * (1.f - fadePercent));
+			}
+		}
+		return;
+	}
 	// update in slow motion if we are dead or beat the level
 	if (miniState == DEATH || miniState == COMPLETE) {
 		// update first few frames in slow motion
@@ -178,8 +178,8 @@ void Game::update(Uint32 delta) {
 		deathText->setAlpha(static_cast<int>(titleAlpha * 255));
 		if (timeDiff > TITLE_FULL_AT) {
 			if (keyPressed(SDL_SCANCODE_SPACE) || keyPressed(SDL_SCANCODE_RETURN) || keyPressed(SDL_SCANCODE_Z)) {
-				SDL_Delay(200);
-				stateManager->changeState(new DeathMenu());
+				fadeOut = true;
+				fadeOutStart = SDL_GetTicks();
 			}
 		}
 		// render the blinking text
@@ -216,8 +216,8 @@ void Game::update(Uint32 delta) {
 		// go the the next level if key pressed
 		if (timeDiff > CAN_GOTO_NEXT_LEVEL) {
 			if (keyPressed(SDL_SCANCODE_RETURN) || keyPressed(SDL_SCANCODE_Z)) {
-				SDL_Delay(200);
-				nextLevel();
+				fadeOut = true;
+				fadeOutStart = SDL_GetTicks();
 			}
 		}
 		// don't return for a complete stage, just add more functionalities
@@ -311,6 +311,15 @@ void Game::render(SDL_Renderer * renderer) {
 	// render the map first
 	bgMap->render(renderer, (camX + camOffsetX) / 2, (camY + camOffsetY) / 2);
 	middleMap->render(renderer, (camX + camOffsetX), (camY + camOffsetY));
+	// if we are fading out, just render that
+	if (fadeOut) {
+		player->render(renderer);
+		for (Enemy * e : enemies) {
+			e->render(renderer);
+		}
+		fadeOutBlack->render(renderer, true);
+		return;
+	}
 	// render specialized things only if playing intro
 	if (miniState == INTRO) {
 		player->render(renderer);
@@ -437,6 +446,20 @@ void Game::loadFromFile(std::string path) {
 				enemies.push_back(enemy);
 				numEnemies++;
 			}
+			// set next level
+			if (line[0] == 'N') {
+				next = tokens[1];
+			}
+			if (tokens.size() == 3) {
+				// check if we should play intro
+				if (tokens[0] == "I" && tokens[1] == "I" && tokens[2] == "I") {
+					miniState = INTRO;
+				}
+				// check if we should fade out music
+				if (tokens[0] == "F" && tokens[1] == "F" && tokens[2] == "F") {
+					fadeOutMusic = true;
+				}
+			}
 		}
 	}
 	else {
@@ -481,6 +504,6 @@ void Game::nextLevel() {
 		stateManager->changeState(new FinalState(cTimer));
 	}
 	else {
-		stateManager->changeState(new Game());
+		stateManager->changeState(new Game(next, true));
 	}
 }

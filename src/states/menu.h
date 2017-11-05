@@ -5,7 +5,7 @@
 #include "QcEngine.h"
 
 #define KEY_TIMER 200
-#define FADE_OUT_TIME 1000
+#define FADE_OUT_TIME 2000
 
 class Menu : public State {
 
@@ -30,9 +30,17 @@ private:
 	int keyDownTimer;
 
 	Texture * black;
-	int fadeOutTimer;
+	int fadeOutStart;
 	bool fadeOut;
 
 	void startGame();
 
+	std::vector<Texture*> controlText;
+	std::vector<Texture*> credits;
+	void renderControlText();
+	void renderCredits();
+	bool renderControl;
+	bool renderCredit;
+
+	bool fullScreen;
 };

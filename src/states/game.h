@@ -57,11 +57,13 @@
 #define TIMER_MS_TEXT_X 450
 #define TIMER_MS_TEXT_Y 70
 
+#define FADE_OUT_TIME 2000
+
 class Game : public State {
 
 public:
-	Game();
-	Game(std::string path);
+	Game(bool resetMusic);
+	Game(std::string path, bool resetMusic);
 	~Game();
 
 	void init();
@@ -147,4 +149,13 @@ private:
 	// keep track of the next level
 	std::string next;
 	void nextLevel();
+
+	// handle fade out things
+	bool fadeOut;
+	bool fadeOutMusic;
+	Texture * fadeOutBlack;
+	int fadeOutStart;
+
+	bool nextReset;
+	bool nextFadeOut;
 };

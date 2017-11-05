@@ -2,9 +2,9 @@
 
 #include "QcEngine.h"
 #include "constants.h"
+#include "states\transition.h"
 #include "states/menu.h"
-#include "states/game.h"
-#include "SDL_mixer.h"
+#include "audio\audio.h"
 
 int main(int argc, char* argv[]) {
 	
@@ -19,7 +19,9 @@ int main(int argc, char* argv[]) {
 		return false;
 	}
 
-	engine.setState(new Menu());
+	// start playing the menu music
+	Audio::playTrack("assets/music/menu.wav", 0, true);
+	engine.setState(new Transition(new Menu(), 3000, "assets/logo.png", 190, 190, 1000, 1000));
 
 	while (engine.isRunning()) {
 		engine.update();
