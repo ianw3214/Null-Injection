@@ -53,7 +53,7 @@ void Menu::update(Uint32 delta) {
 			// play the menu blip sound
 			Audio::playTrack("assets/sfx/menuBlip.wav", 1, false);
 		}
-		if (keyPressed(SDL_SCANCODE_SPACE) || keyPressed(SDL_SCANCODE_RETURN)) {
+		if (keyPressed(SDL_SCANCODE_Z) || keyPressed(SDL_SCANCODE_SPACE) || keyPressed(SDL_SCANCODE_RETURN)) {
 			select();
 		}
 		// update timers

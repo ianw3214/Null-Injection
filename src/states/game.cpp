@@ -82,6 +82,15 @@ void Game::init() {
 	stateManager->createFont("deathText", "assets/fonts/munro/Munro.ttf", 44, Colour(205, 205, 205));
 	nextStateText = new Texture(stateManager->getTextTexture("Press SPACE to continue...", "deathText"));
 
+	// stage win things
+	stateManager->createFont("stageBeatTitle", "assets/fonts/munro/Munro.ttf", 96, Colour(255, 255, 255));
+	stageBeatText1 = new Texture(stateManager->getTextTexture("STAGE", "stageBeatTitle"));
+	stageBeatText2 = new Texture(stateManager->getTextTexture("COMPLETE", "stageBeatTitle"));
+	stageBeatText3 = new Texture(stateManager->getTextTexture("Press SPACE to proceed...", "deathText"));
+	white = new Texture("assets/white.png", renderer);
+	stageBeatText1->setAlpha(0);
+	stageBeatText2->setAlpha(0);
+
 }
 
 void Game::cleanUp() {
@@ -89,6 +98,20 @@ void Game::cleanUp() {
 }
 
 void Game::update(Uint32 delta) {
+	// update in slow motion if we are dead or beat the level
+	if (miniState == DEATH || miniState == COMPLETE) {
+		// update first few frames in slow motion
+		if (numSlowMoFrames < NUM_SLOW_MO_FRAMES) {
+			deathSlowMoFrameCounter--;
+			if (deathSlowMoFrameCounter <= 0) {
+				deathSlowMoFrameCounter = SLOW_MO_FRAMES;
+				numSlowMoFrames++;
+			}
+			else {
+				return;
+			}
+		}
+	}
 	// play the intro first if set
 	if (miniState == INTRO) {
 		// set the start time if it is the first run through
@@ -118,16 +141,6 @@ void Game::update(Uint32 delta) {
 	// play the death state first if set
 	if (miniState == DEATH) {
 		int timeDiff = SDL_GetTicks() - deathStartTime;
-		// update first few frames in slow motion
-		if (numSlowMoFrames < NUM_SLOW_MO_FRAMES) {
-			deathSlowMoFrameCounter--;
-			if (deathSlowMoFrameCounter <= 0) {
-				deathSlowMoFrameCounter = SLOW_MO_FRAMES;
-			}
-			else {
-				return;
-			}
-		}
 		// update red overlay
 		float alphaPercentage = 1.f - static_cast<float>(timeDiff) / static_cast<float>(RED_OVERLAY_PERSIST_AFTER);
 		if (alphaPercentage < 0.5f) alphaPercentage = 0.5f;
@@ -162,6 +175,7 @@ void Game::update(Uint32 delta) {
 				stateManager->changeState(new DeathMenu());
 			}
 		}
+		// render the blinking text
 		if (timeDiff > SHOW_DEATH_TEXT_AT) {
 			bool on = static_cast<int>((timeDiff - SHOW_DEATH_TEXT_AT)/ DEATH_TEXT_BLINK_TIME) % 2 == 0;
 			nextStateText->setAlpha(on ? 255 : 0);
@@ -170,13 +184,36 @@ void Game::update(Uint32 delta) {
 	}
 	// play the stage complete state if set
 	if (miniState == COMPLETE) {
-		// keep updating player animations
-		player->updateAnimation(static_cast<float>(delta));
-		// keep updating enemies
-		for (Enemy * e : enemies) {
-			e->updateSimple(static_cast<float>(delta));
+		int timeDiff = SDL_GetTicks() - levelBeatTime;
+		// show title after a certain amount of time
+		if (timeDiff > SHOW_COMPLETE_TITLE_AT) {
+			stageBeatText1->setAlpha(255);
+			stageBeatText2->setAlpha(255);
 		}
-		return;
+		else {
+			stageBeatText1->setAlpha(0);
+			stageBeatText2->setAlpha(0);
+		}
+		// update white overlay
+		float alphaPercentage = 1.f - static_cast<float>(timeDiff) / static_cast<float>(WHITE_OVERLAY_TRAIL);
+		if (alphaPercentage < 0.0f) alphaPercentage = 0.0f;
+		white->setAlpha(static_cast<int>(alphaPercentage * 255));
+		// render the blinking text
+		if (timeDiff > SHOW_WIN_TEXT_AT) {
+			bool on = static_cast<int>((timeDiff - SHOW_WIN_TEXT_AT) / WIN_TEXT_BLINK_TIME) % 2 == 0;
+			stageBeatText3->setAlpha(on ? 255 : 0);
+		}
+		else {
+			stageBeatText3->setAlpha(0);
+		}
+		// go the the next level if key pressed
+		if (timeDiff > CAN_GOTO_NEXT_LEVEL) {
+			if (keyPressed(SDL_SCANCODE_RETURN) || keyPressed(SDL_SCANCODE_Z)) {
+				SDL_Delay(200);
+				stateManager->changeState(new Game());
+			}
+		}
+		// don't return for a complete stage, just add more functionalities
 	}
 	State::update(delta);
 	// handle player movement
@@ -236,8 +273,19 @@ void Game::update(Uint32 delta) {
 	while (attackMessager->hasMessage()) {
 		processAndPopNextMessage();
 	}
+	// don't update states if we are already complete
+	if (miniState == COMPLETE) return;
+	// check if player beat the level
+	if (killedEnemies == numEnemies) {
+		levelBeatTime = SDL_GetTicks();
+		miniState = COMPLETE;
+		numSlowMoFrames = 0;
+		shakeTimer = WIN_SHAKE_TIME;
+		intensity = WIN_SHAKE_INTENSITY;
+	}
 	// go to death menu if player died
-	if (player->getHealth() <= 0) {
+	// however, don't die if we beat the level first
+	if (player->getHealth() <= 0 && miniState != COMPLETE) {
 		miniState = DEATH;
 		deathStartTime = SDL_GetTicks();
 		deathSlowMoFrameCounter = SLOW_MO_FRAMES;
@@ -245,11 +293,6 @@ void Game::update(Uint32 delta) {
 		// add screen shake
 		shakeTimer = DEATH_SHAKE_TIME;
 		intensity = DEATH_SHAKE_INTENSITY;
-	}
-	// check if player beat the level
-	if (killedEnemies == numEnemies) {
-		levelBeatTime = SDL_GetTicks();
-		miniState = COMPLETE;
 	}
 }
 
@@ -277,6 +320,15 @@ void Game::render(SDL_Renderer * renderer) {
 		if (SDL_GetTicks() - deathStartTime > SHOW_DEATH_TEXT_AT) {
 			nextStateText->render(renderer, DEATH_TEXT_X, DEATH_TEXT_Y);
 		}
+		return;
+	}
+	if (miniState == COMPLETE) {
+		State::render(renderer);
+		renderPlayerHealth();
+		stageBeatText1->render(renderer, COMPLETE_TEXT_1_X, COMPLETE_TEXT_1_Y);
+		stageBeatText2->render(renderer, COMPLETE_TEXT_2_X, COMPLETE_TEXT_2_Y);
+		stageBeatText3->render(renderer, WIN_TEXT_X, WIN_TEXT_Y);
+		white->render(renderer, true);
 		return;
 	}
 	renderPlayerHealth();

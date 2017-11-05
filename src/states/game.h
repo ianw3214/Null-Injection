@@ -25,7 +25,7 @@
 
 #define SWITCH_DEATH_MENU 500
 #define SLOW_MO_FRAMES 3
-#define NUM_SLOW_MO_FRAMES 20
+#define NUM_SLOW_MO_FRAMES 100
 #define RED_OVERLAY_PERSIST_AFTER 3000
 #define DEATH_SHAKE_TIME 800
 #define DEATH_SHAKE_INTENSITY 50
@@ -38,7 +38,19 @@
 #define SHOW_DEATH_TEXT_AT 4000
 #define DEATH_TEXT_BLINK_TIME 500
 
-
+#define SHOW_COMPLETE_TITLE_AT 700
+#define COMPLETE_TEXT_1_X 30
+#define COMPLETE_TEXT_1_Y 40
+#define COMPLETE_TEXT_2_X 60
+#define COMPLETE_TEXT_2_Y 140
+#define WHITE_OVERLAY_TRAIL 2000
+#define WIN_SHAKE_INTENSITY 35
+#define WIN_SHAKE_TIME 400
+#define WIN_TEXT_X 30
+#define WIN_TEXT_Y 300
+#define SHOW_WIN_TEXT_AT 2000
+#define WIN_TEXT_BLINK_TIME 450
+#define CAN_GOTO_NEXT_LEVEL 1000
 
 class Game : public State {
 
@@ -116,5 +128,9 @@ private:
 	int numEnemies, killedEnemies;
 	
 	// beat level variables
+	Texture * stageBeatText1;
+	Texture * stageBeatText2;
+	Texture * white;
+	Texture * stageBeatText3;
 	int levelBeatTime;
 };
