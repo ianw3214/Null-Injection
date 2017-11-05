@@ -1,4 +1,5 @@
 #include "enemy.h"
+#include "../audio/audio.h"
 
 Enemy::Enemy(int x, int y, std::vector<Shape*>* inputMap, SDL_Renderer * renderer, AttackMessager * messager, Player * playerRef) {
 	player = playerRef;
@@ -197,6 +198,8 @@ void Enemy::attack(bool right) {
 	// create an attack message and send it to the messager
 	AttackMessage message = AttackMessage(PLAYER, 1, new Rectangle(effectX, position.y, 200, 64));
 	attackMessager->addMessage(message);
+	// play the laser sound
+	Audio::playTrack("assets/sfx/laser.wav", 1, false);
 }
 
 void Enemy::takeDamage(int dmg) {

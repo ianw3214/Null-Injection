@@ -1,4 +1,5 @@
 #include "player.h"
+#include "../audio/audio.h"
 
 Player::Player(SDL_Renderer * renderer, std::vector<Shape*>* inputMap, int _x, int _y, AttackMessager * messager) {
 	attackMessager = messager;
@@ -63,6 +64,7 @@ void Player::jump() {
 		onGround = false;
 		canJump = false;
 		jumpTimer = JUMP_COOLDOWN;
+		Audio::playTrack("assets/sfx/jump.wav", 1, false);
 	}
 }
 
@@ -74,6 +76,8 @@ void Player::roll() {
 	changeAnimation(faceRight ? ROLL_RIGHT : ROLL_LEFT);
 	nextAnim = faceRight ? IDLE_RIGHT : IDLE_LEFT;
 	invincibleTimer = INVINCIBLE_TIME;
+	// play a sound
+	Audio::playTrack("assets/sfx/roll.wav", 1, false);
 }
 
 void Player::attack() {
@@ -93,6 +97,8 @@ void Player::attack() {
 	// create an attack message and send it to the messager
 	AttackMessage message = AttackMessage(ENEMY, 1, new Rectangle(effectX, position.y - 36, 100, 100));
 	attackMessager->addMessage(message);
+	// play a sound
+	Audio::playTrack("assets/sfx/kick.wav", 1, false);
 }
 
 void Player::render(SDL_Renderer * renderer) {

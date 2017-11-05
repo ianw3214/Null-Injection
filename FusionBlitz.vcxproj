@@ -85,7 +85,7 @@
       <AdditionalIncludeDirectories>C:\Users\ianw3214\workspace\FusionBlitz\Engine\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>QcEngine.lib;SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;winmm.lib;version.lib;Imm32.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>QcEngine.lib;SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;SDL2_mixer.lib;winmm.lib;version.lib;Imm32.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -108,7 +108,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>QcEngine.lib;SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;winmm.lib;version.lib;Imm32.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>QcEngine.lib;SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;SDL2_mixer.lib;winmm.lib;version.lib;Imm32.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -127,21 +127,25 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\attackMessage.cpp" />
+    <ClCompile Include="src\audio\audio.cpp" />
     <ClCompile Include="src\entities\enemy.cpp" />
     <ClCompile Include="src\entities\map.cpp" />
     <ClCompile Include="src\entities\player.cpp" />
     <ClCompile Include="src\graphics\effect.cpp" />
     <ClCompile Include="src\states\game.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\states\menu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\attackMessage.h" />
+    <ClInclude Include="src\audio\audio.h" />
     <ClInclude Include="src\constants.h" />
     <ClInclude Include="src\entities\enemy.h" />
     <ClInclude Include="src\entities\map.h" />
     <ClInclude Include="src\entities\player.h" />
     <ClInclude Include="src\graphics\effect.h" />
     <ClInclude Include="src\states\game.h" />
+    <ClInclude Include="src\states\menu.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

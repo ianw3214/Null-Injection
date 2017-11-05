@@ -10,6 +10,7 @@
 #include "../entities/player.h"
 #include "../entities/enemy.h"
 #include "../entities/map.h"
+#include "../audio/audio.h"
 
 #define CAM_SPEED 300
 #define CAM_MARGIN 100
@@ -35,6 +36,7 @@ private:
 
 	Player * player;
 	Map * middleMap;
+	Map * bgMap;
 	// rectangle to represent the camera
 	int camX, camY;
 

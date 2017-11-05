@@ -6,6 +6,7 @@ Game::Game() {
 
 Game::~Game() {
 	delete middleMap;
+	delete bgMap;
 	delete attackMessager;
 }
 
@@ -27,12 +28,16 @@ void Game::init() {
 	mapCollisions.emplace_back(new Rectangle(768, 576, 256, 128));
 	mapCollisions.emplace_back(new Rectangle(256, 384, 448, 128));
 	mapCollisions.emplace_back(new Rectangle(0, 192, 192, 128));
+	mapCollisions.emplace_back(new Rectangle(0, 0, 64, 1128));
+	mapCollisions.emplace_back(new Rectangle(960, 0, 64, 1128));
+	mapCollisions.emplace_back(new Rectangle(0, -64, 1024, 64));
 
 	// setup the camera
 	camX = 0, camY = 0;
 
 	// setup the map
 	middleMap = new Map("assets/map.png", renderer);
+	bgMap = new Map("assets/map_bg.png", renderer);
 
 	// add an enemy
 	for (int i = 0; i < 5; i++) {
@@ -43,6 +48,10 @@ void Game::init() {
 
 	// initialize static textures
 	healthTexture = std::make_unique<Texture>("assets/heart.png", renderer);
+
+	// temporarily mute the game
+	// Audio::mute();
+	Audio::playTrack("assets/music/bgm.wav", 0, true);
 }
 
 void Game::cleanUp() {
@@ -99,6 +108,7 @@ void Game::update(Uint32 delta) {
 
 void Game::render(SDL_Renderer * renderer) {
 	// render the map first
+	bgMap->render(renderer, camX / 2, camY / 2);
 	middleMap->render(renderer, camX, camY);
 	renderPlayerHealth();
 	State::render(renderer);
