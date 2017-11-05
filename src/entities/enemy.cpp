@@ -44,6 +44,7 @@ void Enemy::update(float delta) {
 			action = (Action)randomNumber(3);
 			actionTime = MIN_ACTION_TIME + randomNumber(2000);
 		}
+		// update movement as well as animations
 		if (action == ACTION_CHARGE_RIGHT) {
 			faceRight = true;
 			chargeTimer -= static_cast<int>(delta);
@@ -52,8 +53,7 @@ void Enemy::update(float delta) {
 				attack(true);
 			}
 		}
-		// update movement as well as animations
-		if (action == ACTION_CHARGE_LEFT) {
+		else if (action == ACTION_CHARGE_LEFT) {
 			faceRight = false;
 			chargeTimer -= static_cast<int>(delta);
 			if (chargeTimer <= 0) {
@@ -127,6 +127,92 @@ void Enemy::update(float delta) {
 		removeTimer -= static_cast<int>(delta);
 		if (removeTimer <= 0) REMOVE = true;
 	}
+	// update animation frames
+	if (frameCounter > ANIMATION_INTERVAL) {
+		frameCounter = 0;
+		currentFrame++;
+		if (currentFrame > animations[currentAnimation].end) {
+			currentFrame = animations[currentAnimation].start;
+			// end the animation if it should be over
+			if (statePlayOnce[currentAnimation]) {
+				changeAnimation(nextAnim);
+			}
+		}
+		texture->changeCurrentAtlasTexture(currentFrame);
+	}
+	else {
+		frameCounter++;
+	}
+	// update effects
+	// REALLY BAD CODE RIGHT HERE
+	std::vector<int> removeIndices;
+	for (unsigned int i = 0; i < effects.size(); ++i) {
+		effects[i]->setCamX(camX);
+		effects[i]->setCamY(camY);
+		effects[i]->update(delta);
+		if (effects[i]->REMOVE) {
+			removeIndices.push_back(i);
+		}
+	}
+	std::reverse(removeIndices.begin(), removeIndices.end());
+	for (int index : removeIndices) {
+		Effect * temp = effects.at(index);
+		effects.erase(effects.begin() + index);
+		delete temp;
+	}
+}
+
+// update function used for after player has died
+void Enemy::updateSimple(float delta) {
+	// update movement as well as animations
+	if (action == ACTION_CHARGE_RIGHT) {
+		faceRight = true;
+		chargeTimer = 0;
+		action = ACTION_IDLE;
+	}
+	else if (action == ACTION_CHARGE_LEFT) {
+		faceRight = false;
+		chargeTimer = 0;
+		action = ACTION_IDLE;
+	}
+	else if (action == ACTION_ATTACK_RIGHT) {
+		faceRight = true;
+		attackTimer = 0;
+		action = ACTION_IDLE;
+	}
+	else if (action == ACTION_ATTACK_LEFT) {
+		faceRight = false;
+		attackTimer = 0;
+		action = ACTION_IDLE;
+	}
+	else if (action == ACTION_IDLE) {
+		if (faceRight) changeAnimation(IDLE_RIGHT);
+		else changeAnimation(IDLE_LEFT);
+	}
+	else if (action == ACTION_MOVE_RIGHT) {
+		faceRight = true;
+		changeAnimation(MOVE_RIGHT);
+		moveHelp(1, static_cast<int>(ENEMY_SPEED * delta / 1000));
+	}
+	else if (action == ACTION_MOVE_LEFT) {
+		faceRight = false;
+		changeAnimation(MOVE_LEFT);
+		moveHelp(3, static_cast<int>(ENEMY_SPEED * delta / 1000));
+	}
+	// update y velocity as well
+	if (!onGround) yVelocity -= GRAVITY * delta / 1000;
+	else yVelocity = 0.0f;
+	yVelocity = clamp(yVelocity, -20.f, 20.f);
+	if (yVelocity < 0) {
+		moveHelp(2, static_cast<int>(-yVelocity));
+	}
+	else {
+		moveHelp(0, static_cast<int>(yVelocity));
+	}
+	onGround = detectOnGround();
+	// update enemy collision box
+	collisionBox.x = position.x;
+	collisionBox.y = position.y;
 	// update animation frames
 	if (frameCounter > ANIMATION_INTERVAL) {
 		frameCounter = 0;

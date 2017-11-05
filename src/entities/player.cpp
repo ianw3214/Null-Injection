@@ -30,7 +30,7 @@ Player::Player(SDL_Renderer * renderer, std::vector<Shape*>* inputMap, int _x, i
 	// set the players own collision box
 	position.x = _x;
 	position.y = _y;
-	collisionBox = Rectangle(position.x, position.y, 64, 64);
+	collisionBox = Rectangle(position.x, position.y, 44, 64);
 	// save the renderer in the player class to create effects
 	this->renderer = renderer;
 	health = PLAYER_HEALTH;
@@ -80,9 +80,9 @@ void Player::roll() {
 	Audio::playTrack("assets/sfx/roll.wav", 1, false);
 }
 
-void Player::attack() {
+bool Player::attack() {
 	// don't attack if attacking or rolling
-	if (attacking || rolling) return;
+	if (attacking || rolling) return false;
 	attackCoolDown = ATTACK_TIME;
 	attacking = true;
 	changeAnimation(faceRight ? ATTACK_RIGHT : ATTACK_LEFT);
@@ -99,6 +99,7 @@ void Player::attack() {
 	attackMessager->addMessage(message);
 	// play a sound
 	Audio::playTrack("assets/sfx/kick.wav", 1, false);
+	return true;
 }
 
 void Player::render(SDL_Renderer * renderer) {
@@ -187,23 +188,6 @@ void Player::update(float delta) {
 	}
 	// let the player wall jump
 	if (jumpTimer == 0) updateCanJumpIfHittingWall();
-	// update animation logic
-	// update the animation frames
-	if (frameCounter > ANIMATION_INTERVAL) {
-		frameCounter = 0;
-		currentFrame++;
-		if (currentFrame > animations[currentAnimation].end) {
-			currentFrame = animations[currentAnimation].start;
-			// end the animation if it should be over
-			if (statePlayOnce[currentAnimation]) {
-				changeAnimation(nextAnim);
-			}
-		}
-		texture->changeCurrentAtlasTexture(currentFrame);
-	}
-	else {
-		frameCounter++;
-	}
 	// reset the move flags at the end of each state
 	moveRight = false, moveLeft = false;
 	// update effects
@@ -225,6 +209,26 @@ void Player::update(float delta) {
 	}
 }
 
+void Player::updateAnimation(float delta) {
+	// update animation logic
+	// update the animation frames
+	if (frameCounter > ANIMATION_INTERVAL) {
+		frameCounter = 0;
+		currentFrame++;
+		if (currentFrame > animations[currentAnimation].end) {
+			currentFrame = animations[currentAnimation].start;
+			// end the animation if it should be over
+			if (statePlayOnce[currentAnimation]) {
+				changeAnimation(nextAnim);
+			}
+		}
+		texture->changeCurrentAtlasTexture(currentFrame);
+	}
+	else {
+		frameCounter++;
+	}
+}
+
 void Player::setCamX(int x) {
 	camX = x;
 }
@@ -238,6 +242,8 @@ void Player::takeDamage(int dmg) {
 		health -= dmg;
 		if (health <= 0) {
 			DEAD = true;
+			changeAnimation(faceRight ? DEATH_RIGHT : DEATH_LEFT);
+			nextAnim = DEATH_IDLE;
 		}
 		invincibleTimer = INVINCIBLE_TIME;
 	}
@@ -253,7 +259,7 @@ Rectangle Player::getCollisionBox() const {
 
 void Player::setupAtlas() {
 	// rows
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 13; i++) {
 		// columns
 		for (int j = 0; j < 8; j++) {
 			texture->getAtlas().emplace_back(Rectangle(j * 64, i * 64, 64, 64));
@@ -272,6 +278,9 @@ void Player::setupAnimations() {
 	animations[7] = { 56, 63 };
 	animations[8] = { 64, 69 };
 	animations[9] = { 72, 77 };
+	animations[10] = { 80, 85 };
+	animations[11] = { 88, 93 };
+	animations[12] = { 96, 102 };
 	statePlayOnce[0] = false;
 	statePlayOnce[1] = false;
 	statePlayOnce[2] = false;
@@ -282,6 +291,9 @@ void Player::setupAnimations() {
 	statePlayOnce[7] = true;
 	statePlayOnce[8] = true;
 	statePlayOnce[9] = true;
+	statePlayOnce[10] = true;
+	statePlayOnce[11] = true;
+	statePlayOnce[12] = false;
 	nextAnim = IDLE_RIGHT;
 }
 
@@ -330,7 +342,7 @@ void Player::moveHelp(int dir, int amount) {
 		}
 	}
 	// update the positions in the end
-	position.x = newX;
+	position.x = newX - HIT_BOX_MARGIN_X;
 	position.y = newY;
 	collisionBox.x = newX;
 	collisionBox.y = newY;

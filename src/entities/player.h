@@ -8,7 +8,7 @@
 #include "../graphics/effect.h"
 #include "../constants.h"
 
-#define NUM_ANIMATIONS 10
+#define NUM_ANIMATIONS 13
 #define SPEED 300
 #define JUMP_HEIGHT 8.f
 #define JUMP_COOLDOWN 300
@@ -17,6 +17,7 @@
 #define ATTACK_TIME 300
 #define PLAYER_HEALTH 5
 #define INVINCIBLE_TIME 300
+#define HIT_BOX_MARGIN_X 10
 
 class Player : public Entity {
 
@@ -37,7 +38,10 @@ class Player : public Entity {
 		ROLL_RIGHT = 6,
 		ROLL_LEFT = 7,
 		ATTACK_RIGHT = 8,
-		ATTACK_LEFT = 9
+		ATTACK_LEFT = 9,
+		DEATH_RIGHT = 10,
+		DEATH_LEFT = 11,
+		DEATH_IDLE = 12
 	};
 	bool statePlayOnce[NUM_ANIMATIONS];
 	int nextAnim;
@@ -50,10 +54,11 @@ public:
 	void move(int dir);
 	void jump();
 	void roll();
-	void attack();
+	bool attack();
 
 	void render(SDL_Renderer * renderer);
 	void update(float delta);
+	void updateAnimation(float delta);
 
 	void setCamX(int x);
 	void setCamY(int y);

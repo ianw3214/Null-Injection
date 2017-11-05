@@ -59,6 +59,7 @@ public:
 
 	void update(float delta);
 	void render(SDL_Renderer * renderer);
+	void updateSimple(float delta);
 
 	void setCamX(int x);
 	void setCamY(int y);

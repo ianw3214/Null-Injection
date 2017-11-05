@@ -11,6 +11,7 @@ Menu::~Menu() {
 	for (Texture * t : menuItems) {
 		delete t;
 	}
+	delete black;
 }
 
 void Menu::init() {
@@ -25,6 +26,9 @@ void Menu::init() {
 	Texture * texture3 = new Texture(stateManager->getTextTexture("QUIT", "menuItem"));
 	menuItems.push_back(texture3);
 	updateMenuItems();
+	black = new Texture("assets/black.png", renderer);
+	fadeOutTimer = 0;
+	fadeOut = false;
 }
 
 void Menu::cleanUp() {
@@ -33,31 +37,41 @@ void Menu::cleanUp() {
 
 void Menu::update(Uint32 delta) {
 	State::update(delta);
-	if (keyPressed(SDL_SCANCODE_UP) && keyUpTimer == 0) {
-		currentItem = currentItem == 0 ? currentItem : currentItem - 1;
-		keyUpTimer = KEY_TIMER;
-		updateMenuItems();
-		// play the menu blip sound
-		Audio::playTrack("assets/sfx/menuBlip.wav", 1, false);
+	if (!fadeOut) {
+		if (keyPressed(SDL_SCANCODE_UP) && keyUpTimer == 0) {
+			currentItem = currentItem == 0 ? currentItem : currentItem - 1;
+			keyUpTimer = KEY_TIMER;
+			updateMenuItems();
+			// play the menu blip sound
+			Audio::playTrack("assets/sfx/menuBlip.wav", 1, false);
+		}
+		if (keyPressed(SDL_SCANCODE_DOWN) && keyDownTimer == 0) {
+			currentItem = currentItem == menuItems.size() - 1 ? currentItem : currentItem + 1;
+			keyDownTimer = KEY_TIMER;
+			updateMenuItems();
+			// play the menu blip sound
+			Audio::playTrack("assets/sfx/menuBlip.wav", 1, false);
+		}
+		if (keyPressed(SDL_SCANCODE_SPACE) || keyPressed(SDL_SCANCODE_RETURN)) {
+			select();
+		}
+		// update timers
+		if (keyUpTimer > 0) {
+			keyUpTimer -= delta;
+			if (keyUpTimer < 0) keyUpTimer = 0;
+		}
+		if (keyDownTimer> 0) {
+			keyDownTimer -= delta;
+			if (keyDownTimer < 0) keyDownTimer = 0;
+		}
 	}
-	if (keyPressed(SDL_SCANCODE_DOWN) && keyDownTimer == 0) {
-		currentItem = currentItem == menuItems.size() - 1 ? currentItem : currentItem + 1;
-		keyDownTimer = KEY_TIMER;
-		updateMenuItems();
-		// play the menu blip sound
-		Audio::playTrack("assets/sfx/menuBlip.wav", 1, false);
-	}
-	if (keyPressed(SDL_SCANCODE_SPACE) || keyPressed(SDL_SCANCODE_RETURN)) {
-		select();
-	}
-	// update timers
-	if (keyUpTimer > 0) {
-		keyUpTimer -= delta;
-		if (keyUpTimer < 0) keyUpTimer = 0;
-	}
-	if (keyDownTimer> 0) {
-		keyDownTimer -= delta;
-		if (keyDownTimer < 0) keyDownTimer = 0;
+	else {
+		fadeOutTimer -= delta;
+		float alphaPercent = 1.f - static_cast<float>(fadeOutTimer) / static_cast<float>(FADE_OUT_TIME);
+		black->setAlpha(static_cast<Uint32>(alphaPercent * 255.f));
+		if (fadeOutTimer <= 0) {
+			stateManager->changeState(new Game());
+		}
 	}
 }
 
@@ -66,6 +80,8 @@ void Menu::render(SDL_Renderer * renderer) {
 	for (unsigned int i = 0; i < menuItems.size(); ++i) {
 		menuItems.at(i)->render(renderer, 20, 64 * i + 230);
 	}
+	if (fadeOut) black->render(renderer, true);
+	
 }
 
 void Menu::updateMenuItems() {
@@ -84,7 +100,7 @@ void Menu::select() {
 	Audio::playTrack("assets/sfx/bigMenuBlip.wav", 1, false);
 	switch (currentItem) {
 	case 0: {
-		stateManager->changeState(new Game());
+		startGame();
 	} break;
 	case 1: {
 		LOG("LOL");
@@ -96,4 +112,10 @@ void Menu::select() {
 		ERR("Menu item selection out of range.");
 	}
 	}
+}
+
+void Menu::startGame() {
+	fadeOutTimer = FADE_OUT_TIME;
+	black->setAlpha(255);
+	fadeOut = true;
 }
