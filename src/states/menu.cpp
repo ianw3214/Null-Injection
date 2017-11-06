@@ -3,7 +3,10 @@
 #include "game.h"
 
 Menu::Menu() {
-
+	currentItem = 0;
+	keyUpTimer = 0;
+	keyDownTimer = 0;
+	fullScreen = false;
 }
 
 Menu::~Menu() {
@@ -21,10 +24,11 @@ Menu::~Menu() {
 }
 
 void Menu::init() {
-	currentItem = 0;
-	keyUpTimer = 0;
-	keyDownTimer = 0;
-	stateManager->createFont("menuItem", "assets/fonts/munro/Munro.ttf", 64, Colour(200, 200, 200));
+
+	stateManager->createFont("menuTitle", "assets/fonts/munro/Munro.ttf", 84, Colour(255, 255, 255));
+	title = new Texture(stateManager->getTextTexture("NULL INJECTION", "menuTitle"));
+
+	stateManager->createFont("menuItem", "assets/fonts/munro/Munro.ttf", 64, Colour(240, 240, 255));
 	Texture * texture1 = new Texture(stateManager->getTextTexture("PLAY", "menuItem"));
 	menuItems.push_back(texture1);
 	Texture * texture2 = new Texture(stateManager->getTextTexture("CONTROLS", "menuItem"));
@@ -39,7 +43,7 @@ void Menu::init() {
 	black = new Texture("assets/black.png", renderer);
 	fadeOut = false;
 
-	stateManager->createFont("controlText", "assets/fonts/munro/Munro.ttf", 32, Colour(200, 200, 50));
+	stateManager->createFont("controlText", "assets/fonts/munro/Munro.ttf", 32, Colour(244, 244, 33));
 	Texture * controlText1 = new Texture(stateManager->getTextTexture("Z: attack", "controlText"));
 	controlText.push_back(controlText1);
 	Texture * controlText2 = new Texture(stateManager->getTextTexture("X: roll", "controlText"));
@@ -49,8 +53,8 @@ void Menu::init() {
 	Texture * controlText4 = new Texture(stateManager->getTextTexture("ARROWS: move", "controlText"));
 	controlText.push_back(controlText4);
 
-	stateManager->createFont("creditText", "assets/fonts/munro/Munro.ttf", 24, Colour(200, 50, 200));
-	stateManager->createFont("creditTextContributor", "assets/fonts/munro/Munro.ttf", 32, Colour(50, 200, 200));
+	stateManager->createFont("creditText", "assets/fonts/munro/Munro.ttf", 24, Colour(244, 33, 244));
+	stateManager->createFont("creditTextContributor", "assets/fonts/munro/Munro.ttf", 32, Colour(33, 244, 244));
 	Texture * creditText1 = new Texture(stateManager->getTextTexture("Programming:", "creditText"));
 	credits.push_back(creditText1);
 	Texture * creditText2 = new Texture(stateManager->getTextTexture("   Ian Wang", "creditTextContributor"));
@@ -64,7 +68,18 @@ void Menu::init() {
 	Texture * creditText6 = new Texture(stateManager->getTextTexture("   Ian Wang", "creditTextContributor"));
 	credits.push_back(creditText6);
 
-	fullScreen = false;
+	// set background fonts
+	background = new Background(renderer);
+	stateManager->createFont("bg0", "assets/fonts/munro/Munro.ttf", 32, Colour(0, 105, 0));
+	background->largeGreen0 = new Texture(stateManager->getTextTexture("0", "bg0"));
+	background->largeGreen1 = new Texture(stateManager->getTextTexture("1", "bg0"));
+	stateManager->createFont("bg1", "assets/fonts/munro/Munro.ttf", 24, Colour(0, 76, 0));
+	background->smallGreen0 = new Texture(stateManager->getTextTexture("0", "bg1"));
+	background->smallGreen1 = new Texture(stateManager->getTextTexture("1", "bg1"));
+	stateManager->createFont("bg2", "assets/fonts/munro/Munro.ttf", 14, Colour(0, 55, 0));
+	background->tinyGreen0 = new Texture(stateManager->getTextTexture("0", "bg2"));
+	background->tinyGreen1 = new Texture(stateManager->getTextTexture("1", "bg2"));
+	background->populate();
 }
 
 void Menu::cleanUp() {
@@ -72,6 +87,7 @@ void Menu::cleanUp() {
 }
 
 void Menu::update(Uint32 delta) {
+	background->update(static_cast<float>(delta));
 	State::update(delta);
 	if (!fadeOut) {
 		if (keyPressed(SDL_SCANCODE_UP) && keyUpTimer == 0) {
@@ -89,7 +105,7 @@ void Menu::update(Uint32 delta) {
 			Audio::playTrack("assets/sfx/menuBlip.wav", 1, false);
 		}
 		if (keyPressed(SDL_SCANCODE_Z) || keyPressed(SDL_SCANCODE_SPACE) || keyPressed(SDL_SCANCODE_RETURN)) {
-			select();
+			if (selectTimer == 0) select();
 		}
 		// update timers
 		if (keyUpTimer > 0) {
@@ -100,24 +116,31 @@ void Menu::update(Uint32 delta) {
 			keyDownTimer -= delta;
 			if (keyDownTimer < 0) keyDownTimer = 0;
 		}
+		if (selectTimer > 0) {
+			selectTimer -= delta;
+			if (selectTimer < 0) selectTimer = 0;
+		}
 	}
 	else {
 		int fadeOutTimer = SDL_GetTicks() - fadeOutStart;
 		float alphaPercent = static_cast<float>(fadeOutTimer) / static_cast<float>(FADE_OUT_TIME);
 		black->setAlpha(static_cast<Uint32>(alphaPercent * 255.f));
 		if (fadeOutTimer >= FADE_OUT_TIME) {
-			stateManager->changeState(new Game(false));
+			stateManager->changeState(new Game(false, -1, -1));
 		}
 	}
 }
 
 void Menu::render(SDL_Renderer * renderer) {
+	background->render(renderer, 0, 0);
 	State::render(renderer);
 	for (unsigned int i = 0; i < menuItems.size(); ++i) {
 		menuItems.at(i)->render(renderer, 20, 64 * i + 180);
 	}
 	if (renderControl) renderControlText();
 	if (renderCredit) renderCredits();
+	// render the title
+	title->render(renderer, MENU_TITLE_X, MENU_TITLE_Y);
 	if (fadeOut) black->render(renderer, true);
 	
 }
@@ -146,7 +169,21 @@ void Menu::select() {
 	} break;
 	case 2: {
 		fullScreen = !fullScreen;
-		SDL_SetWindowFullscreen(stateManager->window, fullScreen ? SDL_WINDOW_FULLSCREEN : 0);
+		SDL_DestroyWindow(stateManager->window);
+		stateManager->window = SDL_CreateWindow("Fusion Blitz", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 500, 500, fullScreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_BORDERLESS);
+// 		SDL_SetWindowFullscreen(stateManager->window, fullScreen ? SDL_WINDOW_FULLSCREEN : 0);
+		SDL_DestroyRenderer(renderer);
+		stateManager->renderer = SDL_CreateRenderer(stateManager->window, -1, SDL_RENDERER_ACCELERATED);
+		renderer = stateManager->renderer;
+		if (!renderer) {
+			ERR("Could not create new renderer");
+			LOG(SDL_GetError());
+		}
+		// clear old texture vectors before resetting
+		menuItems.clear();
+		controlText.clear();
+		credits.clear();
+		init();
 	} break;
 	case 3: {
 		renderCredit = true;
@@ -159,6 +196,7 @@ void Menu::select() {
 		ERR("Menu item selection out of range.");
 	}
 	}
+	selectTimer = KEY_TIMER;
 }
 
 void Menu::startGame() {

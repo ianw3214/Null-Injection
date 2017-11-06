@@ -11,4 +11,6 @@ namespace Audio {
 	void setVolume(int channel, int volume);
 	void mute();
 	void unmute();
+
+	static bool globalMute = false;
 }

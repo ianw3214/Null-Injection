@@ -2,7 +2,14 @@
 #include "deathState.h"
 #include "finalState.h"
 
-Game::Game(bool resetMusic) {
+Game::Game(bool resetMusic, int timer, int playerHealth) {
+	startingHealth = playerHealth > 0 ? playerHealth : 5;
+	if (timer < 0) {
+		totalTimer = 0;
+	}
+	else {
+		totalTimer = timer;
+	}
 	mapFile = "maps/tut.txt";
 	if (resetMusic) {
 		Audio::playTrack("assets/music/bgm.wav", 0, true);
@@ -10,7 +17,14 @@ Game::Game(bool resetMusic) {
 	}
 }
 
-Game::Game(std::string path, bool resetMusic) {
+Game::Game(std::string path, bool resetMusic, int timer, int playerHealth) {
+	startingHealth = playerHealth > 0 ? playerHealth : 5;
+	if (timer < 0) {
+		totalTimer = 0;
+	}
+	else {
+		totalTimer = timer;
+	}
 	mapFile = path;
 	if (resetMusic) {
 		Audio::playTrack("assets/music/bgm.wav", 0, true);
@@ -22,7 +36,7 @@ Game::~Game() {
 	delete black;
 	delete red;
 	delete middleMap;
-	delete bgMap;
+	delete background;
 	delete attackMessager;
 	delete fadeOutBlack;
 }
@@ -44,7 +58,19 @@ void Game::init() {
 
 	// load the map
 	loadFromFile(mapFile);
-	bgMap = new Map("assets/map_bg.png", renderer);
+
+	// set background fonts
+	background = new Background(renderer);
+	stateManager->createFont("bg0", "assets/fonts/munro/Munro.ttf", 32, Colour(0, 105, 0));
+	background->largeGreen0 = new Texture(stateManager->getTextTexture("0", "bg0"));
+	background->largeGreen1 = new Texture(stateManager->getTextTexture("1", "bg0"));
+	stateManager->createFont("bg1", "assets/fonts/munro/Munro.ttf", 24, Colour(0, 76, 0));
+	background->smallGreen0 = new Texture(stateManager->getTextTexture("0", "bg1"));
+	background->smallGreen1 = new Texture(stateManager->getTextTexture("1", "bg1"));
+	stateManager->createFont("bg2", "assets/fonts/munro/Munro.ttf", 14, Colour(0, 55, 0));
+	background->tinyGreen0 = new Texture(stateManager->getTextTexture("0", "bg2"));
+	background->tinyGreen1 = new Texture(stateManager->getTextTexture("1", "bg2"));
+	background->populate();
 
 	// initialize static textures
 	healthTexture = std::make_unique<Texture>("assets/heart.png", renderer);
@@ -55,6 +81,16 @@ void Game::init() {
 		currentFade = 0;
 		introTimer = 0;
 		introStart = SDL_GetTicks();
+
+		stateManager->createFont("warningText", "assets/fonts/munro/Munro.ttf", 64, Colour(255, 0, 0));
+		stateManager->createFont("warningText2", "assets/fonts/munro/Munro.ttf", 64, Colour(255, 255, 0));
+		redWarning = new Texture("assets/red.png", renderer);
+		warningText = new Texture(stateManager->getTextTexture("!WARNING!", "warningText"));
+		warningText2 = new Texture(stateManager->getTextTexture("HACKERS DETECTED", "warningText2"));
+		redWarning->setAlpha(0);
+		warningText->setAlpha(0);
+		warningText2->setAlpha(0);
+		soundPlayed = false;
 	}
 
 	shakeTimer = 0;
@@ -77,9 +113,9 @@ void Game::init() {
 
 	stateManager->createFont("timer", "assets/fonts/munro/Munro.ttf", 64, Colour(155, 155, 155));
 	stateManager->createFont("timerSmall", "assets/fonts/munro/Munro.ttf", 32, Colour(155, 155, 155));
-	timerStart = SDL_GetTicks();
 	cTimer = 0;
 	timerOn = false;
+	timerStart = SDL_GetTicks();
 
 }
 
@@ -88,6 +124,7 @@ void Game::cleanUp() {
 }
 
 void Game::update(Uint32 delta) {
+	background->update(static_cast<float>(delta));
 	// if we are fading out, just do that and don't do anything else
 	if (fadeOut) {
 		int timeDiff = SDL_GetTicks() - fadeOutStart;
@@ -100,7 +137,7 @@ void Game::update(Uint32 delta) {
 			fadeOutBlack->setAlpha(static_cast<int>(fadePercent * 255));
 			// fade out music as well
 			if (fadeOutMusic) {
-				Audio::setVolume(0, SDL_MIX_MAXVOLUME * (1.f - fadePercent));
+				Audio::setVolume(0, static_cast<int>(SDL_MIX_MAXVOLUME * (1.f - fadePercent)));
 			}
 		}
 		return;
@@ -136,6 +173,7 @@ void Game::update(Uint32 delta) {
 			// check if we are done the intro
 			if ((unsigned int)currentFade >= introFadeTimes.size()) {
 				miniState = NORMAL;
+				timerStart = SDL_GetTicks();
 			}
 		}
 		// do the fade
@@ -143,6 +181,27 @@ void Game::update(Uint32 delta) {
 		if (alphaPercent > 1.f) alphaPercent = 1.f;
 		black->setAlpha(static_cast<Uint8>(alphaPercent * 255.f));
 		introTimer = SDL_GetTicks() - introStart;
+		// update the warning text if we are at the time
+		if (introTimer > WARNING_AT) {
+			bool shouldWarn = ((introTimer - WARNING_AT) / WARNING_INTERVAL) % 2 == 0;
+			if (shouldWarn) {
+				redWarning->setAlpha(30);
+				warningText->setAlpha(255);
+				warningText2->setAlpha(255);
+				if (!soundPlayed) {
+					LOG("PLAY SOUND");
+					Audio::setVolume(2, SDL_MIX_MAXVOLUME / 2);
+					Audio::playTrack("assets/sfx/alarm.wav", 2, false);
+					soundPlayed = true;
+				}
+			}
+			else {
+				soundPlayed = false;
+				redWarning->setAlpha(0);
+				warningText->setAlpha(0);
+				warningText2->setAlpha(0);
+			}
+		}
 		return;
 	}
 	// play the death state first if set
@@ -309,7 +368,7 @@ void Game::update(Uint32 delta) {
 
 void Game::render(SDL_Renderer * renderer) {
 	// render the map first
-	bgMap->render(renderer, (camX + camOffsetX) / 2, (camY + camOffsetY) / 2);
+	background->render(renderer, (camX + camOffsetX), (camY + camOffsetY));
 	middleMap->render(renderer, (camX + camOffsetX), (camY + camOffsetY));
 	// if we are fading out, just render that
 	if (fadeOut) {
@@ -327,6 +386,10 @@ void Game::render(SDL_Renderer * renderer) {
 			e->render(renderer);
 		}
 		black->render(renderer, true);
+		// render the warning
+		redWarning->render(renderer, true);
+		warningText->render(renderer, WARNING_X, WARNING_Y);
+		warningText2->render(renderer, WARNING_X_2, WARNING_Y_2);
 		return;
 	}
 	// render specialized things only if playing death transition
@@ -353,6 +416,13 @@ void Game::render(SDL_Renderer * renderer) {
 	}
 	renderPlayerHealth();
 	renderTimer();
+	// also render projectiles
+	for (Enemy * e : enemies) {
+		if (e->isShootEnemy) {
+			ShootEnemy * s = static_cast<ShootEnemy*>(e);
+			s->renderProjectiles(renderer, camX, camY);
+		}
+	}
 	State::render(renderer);
 }
 
@@ -432,16 +502,26 @@ void Game::loadFromFile(std::string path) {
 				middleMap = new Map(tokens[1], renderer);
 			}
 			if (line[0] == 'P') {
-				player = new Player(renderer, &mapCollisions, std::stoi(tokens[1]), std::stoi(tokens[2]), attackMessager);
+				player = new Player(renderer, &mapCollisions, std::stoi(tokens[1]), std::stoi(tokens[2]), attackMessager, startingHealth);
 				entities.push_back(player);
 			}
 			// add collision shape
-			if (line[0] == 'C') {
+			if (line[0] == 'R') {
 				mapCollisions.emplace_back(new Rectangle(std::stoi(tokens[1]), std::stoi(tokens[2]), std::stoi(tokens[3]), std::stoi(tokens[4])));
+			}
+			if (line[0] == 'C') {
+				mapCollisions.emplace_back(new Circle(std::stoi(tokens[1]), std::stoi(tokens[2]), std::stoi(tokens[3])));
 			}
 			// add basic enemy
 			if (line[0] == 'E') {
 				Enemy * enemy = new Enemy(std::stoi(tokens[1]), std::stoi(tokens[2]), &mapCollisions, renderer, attackMessager, player);
+				entities.push_back(enemy);
+				enemies.push_back(enemy);
+				numEnemies++;
+			}
+			// add shooting enemy
+			if (line[0] == 'S') {
+				ShootEnemy * enemy = new ShootEnemy(std::stoi(tokens[1]), std::stoi(tokens[2]), &mapCollisions, renderer, attackMessager, player);
 				entities.push_back(enemy);
 				enemies.push_back(enemy);
 				numEnemies++;
@@ -500,10 +580,11 @@ void Game::renderTimer() {
 }
 
 void Game::nextLevel() {
+	totalTimer += cTimer;
 	if (next == "FINISH") {
-		stateManager->changeState(new FinalState(cTimer));
+		stateManager->changeState(new FinalState(totalTimer));
 	}
 	else {
-		stateManager->changeState(new Game(next, true));
+		stateManager->changeState(new Game(next, true, totalTimer, player->getHealth()));
 	}
 }

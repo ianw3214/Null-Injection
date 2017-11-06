@@ -14,6 +14,7 @@ FinalState::~FinalState() {
 		delete t;
 	}
 	delete black;
+	delete yourTime;
 }
 
 void FinalState::init() {
@@ -53,6 +54,12 @@ void FinalState::init() {
 	time_rep += static_cast<char>(48 + ms_tens);
 	time_rep += static_cast<char>(48 + ms_ones);
 	timeTexture = new Texture(stateManager->getTextTexture(time_rep, "finalTimer"));
+	// play the menu music
+	Audio::playTrack("assets/music/menu.wav", 0, true);
+	Audio::setVolume(0, SDL_MIX_MAXVOLUME);
+
+	stateManager->createFont("yourTime", "assets/fonts/munro/Munro.ttf", 64, Colour(180, 180, 200));
+	yourTime = new Texture(stateManager->getTextTexture("Your Time: ", "yourTime"));
 }
 
 void FinalState::cleanUp() {
@@ -105,6 +112,7 @@ void FinalState::render(SDL_Renderer * renderer) {
 		menuItems.at(i)->render(renderer, 20, 64 * i + 230);
 	}
 	timeTexture->render(renderer, TIMER_X, TIMER_Y);
+	yourTime->render(renderer, YOUR_TIME_X, YOUR_TIME_Y);
 	if (fadeOut) black->render(renderer, true);
 
 }

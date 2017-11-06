@@ -19,14 +19,17 @@ namespace Audio {
 	}
 
 	void setVolume(int channel, int volume) {
+		if (globalMute) return;
 		Mix_Volume(channel, volume);
 	}
 
 	void mute() {
+		globalMute = true;
 		Mix_Volume(-1, 0);
 	}
 
 	void unmute() {
+		globalMute = false;
 		Mix_Volume(-1, MIX_MAX_VOLUME);
 	}
 

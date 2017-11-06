@@ -1,7 +1,7 @@
 #include "player.h"
 #include "../audio/audio.h"
 
-Player::Player(SDL_Renderer * renderer, std::vector<Shape*>* inputMap, int _x, int _y, AttackMessager * messager) {
+Player::Player(SDL_Renderer * renderer, std::vector<Shape*>* inputMap, int _x, int _y, AttackMessager * messager, int health) {
 	attackMessager = messager;
 	// create the player texture
 	createTexture("assets/player.png", renderer);
@@ -33,7 +33,7 @@ Player::Player(SDL_Renderer * renderer, std::vector<Shape*>* inputMap, int _x, i
 	collisionBox = Rectangle(position.x, position.y, 44, 64);
 	// save the renderer in the player class to create effects
 	this->renderer = renderer;
-	health = PLAYER_HEALTH;
+	this->health = health;
 	invincibleTimer = 0;
 }
 
@@ -349,17 +349,38 @@ void Player::moveHelp(int dir, int amount) {
 	Rectangle newRect = Rectangle(newX, newY, collisionBox.w, collisionBox.h);
 	for (Shape* obj : *collisionMap) {
 		while (isColliding(newRect, *obj)) {
+			// check if up margins can work
 			if (dir == 0) {
 				newY++;
 			}
 			if (dir == 1) {
-				newX--;
+				// check if we can move with up margin
+				Rectangle checkMargin = Rectangle(newX, newY - UP_MARGIN, collisionBox.w, collisionBox.h);
+				if (!isColliding(checkMargin, *obj)) {
+					while (!isColliding(checkMargin, *obj)) {
+						checkMargin.y++;
+					}
+					newY = --checkMargin.y;
+				}
+				else {
+					newX--;
+				}
 			}
 			if (dir == 2) {
 				newY--;
 			}
 			if (dir == 3) {
-				newX++;
+				// check if we can move with up margin
+				Rectangle checkMargin = Rectangle(newX, newY - UP_MARGIN, collisionBox.w, collisionBox.h);
+				if (!isColliding(checkMargin, *obj)) {
+					while (!isColliding(checkMargin, *obj)) {
+						checkMargin.y++;
+					}
+					newY = --checkMargin.y;
+				}
+				else {
+					newX++;
+				}
 			}
 			newRect.x = newX;
 			newRect.y = newY;

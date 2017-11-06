@@ -16,6 +16,7 @@ Transition::~Transition() {
 }
 
 void Transition::init() {
+	
 	texture = new Texture(path, renderer);
 	black = new Texture("assets/black.png", renderer);
 	startTime = SDL_GetTicks();

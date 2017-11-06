@@ -5,6 +5,9 @@
 #define TIMER_X 20
 #define TIMER_Y 120
 
+#define YOUR_TIME_X 30
+#define YOUR_TIME_Y 50
+
 class FinalState : public State{
 
 public:
@@ -17,6 +20,8 @@ public:
 	void update(Uint32 delta);
 	void render(SDL_Renderer * renderer);
 private:
+
+	Texture * yourTime;
 
 	int currentItem;
 	std::vector<Texture*> menuItems;

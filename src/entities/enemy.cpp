@@ -28,6 +28,7 @@ Enemy::Enemy(int x, int y, std::vector<Shape*>* inputMap, SDL_Renderer * rendere
 	setupAtlas();
 	texture->changeCurrentAtlasTexture(0);
 	this->renderer = renderer;
+	isShootEnemy = false;
 }
 
 Enemy::~Enemy() {
@@ -36,14 +37,6 @@ Enemy::~Enemy() {
 
 void Enemy::update(float delta) {
 	if (!DEAD) {
-		// update action counter
-		if (actionTime > 0) {
-			actionTime -= static_cast<int>(delta);
-		}
-		else {
-			action = (Action)randomNumber(3);
-			actionTime = MIN_ACTION_TIME + randomNumber(2000);
-		}
 		// update movement as well as animations
 		if (action == ACTION_CHARGE_RIGHT) {
 			faceRight = true;
@@ -100,6 +93,15 @@ void Enemy::update(float delta) {
 		}
 		// check if we should attack if we aren't already
 		if ((action != ACTION_ATTACK_RIGHT) && (action != ACTION_ATTACK_LEFT) && (action != ACTION_CHARGE_RIGHT) && (action != ACTION_CHARGE_LEFT)) {
+			// update action counter
+			if (actionTime > 0) {
+				actionTime -= static_cast<int>(delta);
+			}
+			else {
+				action = (Action)randomNumber(3);
+				actionTime = MIN_ACTION_TIME + randomNumber(2000);
+			}
+			// check to see if we should attack
 			Line leftCollision = Line(position.x - 200, position.y + 32, position.x, position.y + 32);
 			if (isColliding(leftCollision, player->getCollisionBox())) {
 				action = ACTION_CHARGE_LEFT;
@@ -380,17 +382,38 @@ void Enemy::moveHelp(int dir, int amount) {
 	Rectangle newRect = Rectangle(newX, newY, collisionBox.w, collisionBox.h);
 	for (Shape* obj : *collisionMap) {
 		while (isColliding(newRect, *obj)) {
+			// check if up margins can work
 			if (dir == 0) {
 				newY++;
 			}
 			if (dir == 1) {
-				newX--;
+				// check if we can move with up margin
+				Rectangle checkMargin = Rectangle(newX, newY - ENEMY_UP_MARGIN, collisionBox.w, collisionBox.h);
+				if (!isColliding(checkMargin, *obj)) {
+					while (!isColliding(checkMargin, *obj)) {
+						checkMargin.y++;
+					}
+					newY = --checkMargin.y;
+				}
+				else {
+					newX--;
+				}
 			}
 			if (dir == 2) {
 				newY--;
 			}
 			if (dir == 3) {
-				newX++;
+				// check if we can move with up margin
+				Rectangle checkMargin = Rectangle(newX, newY - ENEMY_UP_MARGIN, collisionBox.w, collisionBox.h);
+				if (!isColliding(checkMargin, *obj)) {
+					while (!isColliding(checkMargin, *obj)) {
+						checkMargin.y++;
+					}
+					newY = --checkMargin.y;
+				}
+				else {
+					newX++;
+				}
 			}
 			newRect.x = newX;
 			newRect.y = newY;

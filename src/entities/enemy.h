@@ -19,8 +19,11 @@
 #define RECOIL_BAR 300
 #define RECOIL_SPEED 500
 
+#define ENEMY_UP_MARGIN 30
+
 class Enemy : public Entity {
 
+protected:
 	// data structures and array to hold animation info
 	struct AnimationInterval {
 		unsigned int start;
@@ -67,15 +70,16 @@ public:
 	void setCamX(int x);
 	void setCamY(int y);
 
-	void attack(bool right);
+	virtual void attack(bool right);
 	bool takeDamage(int dmg, bool right);
 	bool DEAD;
 	bool REMOVE;
 	int removeTimer;
 
 	Rectangle collisionBox;
+	bool isShootEnemy;
 
-private:
+protected:
 	AttackMessager * attackMessager;
 	// store a reference to the player for attacking stuff
 	Player * player;

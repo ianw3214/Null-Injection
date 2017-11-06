@@ -128,7 +128,9 @@
   <ItemGroup>
     <ClCompile Include="src\attackMessage.cpp" />
     <ClCompile Include="src\audio\audio.cpp" />
+    <ClCompile Include="src\entities\background.cpp" />
     <ClCompile Include="src\entities\enemy.cpp" />
+    <ClCompile Include="src\entities\shootEnemy.cpp" />
     <ClCompile Include="src\entities\map.cpp" />
     <ClCompile Include="src\entities\player.cpp" />
     <ClCompile Include="src\graphics\effect.cpp" />
@@ -144,7 +146,9 @@
     <ClInclude Include="src\attackMessage.h" />
     <ClInclude Include="src\audio\audio.h" />
     <ClInclude Include="src\constants.h" />
+    <ClInclude Include="src\entities\background.h" />
     <ClInclude Include="src\entities\enemy.h" />
+    <ClInclude Include="src\entities\shootEnemy.h" />
     <ClInclude Include="src\entities\map.h" />
     <ClInclude Include="src\entities\player.h" />
     <ClInclude Include="src\graphics\effect.h" />

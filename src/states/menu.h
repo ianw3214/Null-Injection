@@ -3,9 +3,13 @@
 #include <vector>
 
 #include "QcEngine.h"
+#include "../entities/background.h"
 
 #define KEY_TIMER 200
 #define FADE_OUT_TIME 2000
+
+#define MENU_TITLE_X 15
+#define MENU_TITLE_Y 15
 
 class Menu : public State {
 
@@ -20,6 +24,8 @@ public:
 	void render(SDL_Renderer * renderer);
 private:
 
+	Texture * title;
+	Background * background;
 	int currentItem;
 	std::vector<Texture*> menuItems;
 
@@ -28,6 +34,7 @@ private:
 
 	int keyUpTimer;
 	int keyDownTimer;
+	int selectTimer;
 
 	Texture * black;
 	int fadeOutStart;

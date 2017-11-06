@@ -10,17 +10,18 @@
 
 #define NUM_ANIMATIONS 15
 #define SPEED 300
-#define JUMP_HEIGHT 8.f
+#define JUMP_HEIGHT 12.f
 #define JUMP_COOLDOWN 300
 #define ROLL_TIME 450
 #define ROLL_SPEED_MODIFIER 2
 #define ATTACK_TIME 300
-#define PLAYER_HEALTH 5
 #define INVINCIBLE_TIME 300
 #define HIT_BOX_MARGIN_X 10
 
 #define PLAYER_RECOIL_BAR 300
 #define PLAYER_RECOIL_SPEED 700
+
+#define UP_MARGIN 10
 
 class Player : public Entity {
 
@@ -53,7 +54,7 @@ class Player : public Entity {
 
 public:
 
-	Player(SDL_Renderer * renderer, std::vector<Shape*>* inputMap, int _x, int _y, AttackMessager * messager);
+	Player(SDL_Renderer * renderer, std::vector<Shape*>* inputMap, int _x, int _y, AttackMessager * messager, int health);
 	~Player();
 
 	void move(int dir);

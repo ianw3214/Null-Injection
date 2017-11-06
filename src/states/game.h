@@ -11,7 +11,9 @@
 #include "../constants.h"
 #include "../entities/player.h"
 #include "../entities/enemy.h"
+#include "../entities/shootEnemy.h"
 #include "../entities/map.h"
+#include "../entities/background.h"
 #include "../audio/audio.h"
 
 #define CAM_SPEED 300
@@ -59,11 +61,18 @@
 
 #define FADE_OUT_TIME 2000
 
+#define WARNING_AT 7680
+#define WARNING_INTERVAL 300
+#define WARNING_X 50
+#define WARNING_Y 300
+#define WARNING_X_2 30
+#define WARNING_Y_2 400
+
 class Game : public State {
 
 public:
-	Game(bool resetMusic);
-	Game(std::string path, bool resetMusic);
+	Game(bool resetMusic, int timer, int playerHealth);
+	Game(std::string path, bool resetMusic, int timer, int playerHealth);
 	~Game();
 
 	void init();
@@ -74,12 +83,14 @@ public:
 
 private:
 
+	int startingHealth;
+
 	AttackMessager * attackMessager;
 	void processAndPopNextMessage();
 
 	Player * player;
 	Map * middleMap;
-	Map * bgMap;
+	Background * background;
 	// rectangle to represent the camera
 	int camX, camY;
 
@@ -145,6 +156,7 @@ private:
 	bool timerOn;
 	int cTimer, timerStart;
 	void renderTimer();
+	int totalTimer;
 
 	// keep track of the next level
 	std::string next;
@@ -158,4 +170,9 @@ private:
 
 	bool nextReset;
 	bool nextFadeOut;
+
+	Texture * redWarning;
+	Texture * warningText;
+	Texture * warningText2;
+	bool soundPlayed;
 };
