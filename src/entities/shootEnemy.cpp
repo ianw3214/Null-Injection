@@ -28,7 +28,9 @@ void ShootEnemy::attack(bool right) {
 	projectile.x = position.x;
 	projectile.y = position.y;
 	// calculate the angle
-	projectile.angle = atan2(static_cast<double>(player->getY() - position.y), static_cast<double>(player->getX() - position.x));
+	int targetX = player->getX() + randomNumber(ERROR_MARGIN) - ERROR_MARGIN / 2;
+	int targetY = player->getY() + randomNumber(ERROR_MARGIN) - ERROR_MARGIN / 2;
+	projectile.angle = atan2(static_cast<double>(targetY - position.y), static_cast<double>(targetX - position.x));
 	LOG(projectile.angle);
 	projectiles.push_back(projectile);
 }
@@ -93,7 +95,7 @@ void ShootEnemy::update(float delta) {
 		if ((action != ACTION_ATTACK_RIGHT) && (action != ACTION_ATTACK_LEFT) && (action != ACTION_CHARGE_RIGHT) && (action != ACTION_CHARGE_LEFT)) {
 			if (shouldAttackTimer <= 0) {
 				bool right = player->getX() > position.x;
-				shouldAttackTimer = SHOOT_ATTACK_INTERVAL;
+				shouldAttackTimer = SHOOT_ATTACK_INTERVAL + randomNumber(SHOOT_ATTACK_INTERVAL);
 				action = right ? ACTION_CHARGE_RIGHT : ACTION_CHARGE_LEFT;
 				chargeTimer = ATTACK_CHARGE;
 				changeAnimation(right ? ATTACK_CHARGING_RIGHT : ATTACK_CHARGING_LEFT);

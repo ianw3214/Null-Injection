@@ -11,7 +11,8 @@
 #define SHOOT_ATTACK_TIME 300
 #define PROJECTILE_SPEED 500
 
-#define SHOOT_ATTACK_INTERVAL 1000
+#define SHOOT_ATTACK_INTERVAL 1500
+#define ERROR_MARGIN 100
 
 class ShootEnemy : public Enemy {
 

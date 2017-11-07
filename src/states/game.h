@@ -59,7 +59,7 @@
 #define TIMER_MS_TEXT_X 450
 #define TIMER_MS_TEXT_Y 70
 
-#define FADE_OUT_TIME 2000
+#define FADE_OUT_TIME 1000
 
 #define WARNING_AT 7680
 #define WARNING_INTERVAL 300
@@ -67,6 +67,8 @@
 #define WARNING_Y 300
 #define WARNING_X_2 30
 #define WARNING_Y_2 400
+
+#define PLAYER_MOD_INTERVAL 300
 
 class Game : public State {
 
@@ -175,4 +177,9 @@ private:
 	Texture * warningText;
 	Texture * warningText2;
 	bool soundPlayed;
+
+	static bool introPlayed;
+
+	// player hit feedback
+	int playerHitTimer;
 };

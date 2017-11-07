@@ -6,10 +6,14 @@
 #include "../entities/background.h"
 
 #define KEY_TIMER 200
-#define FADE_OUT_TIME 2000
+#define MENU_FADE_OUT_TIME 2000
 
 #define MENU_TITLE_X 15
 #define MENU_TITLE_Y 15
+
+#define HINT_INTERVAL 500
+#define HINT_X 20
+#define HINT_Y 484
 
 class Menu : public State {
 
@@ -50,4 +54,6 @@ private:
 	bool renderCredit;
 
 	bool fullScreen;
+
+	Texture * hintText;
 };

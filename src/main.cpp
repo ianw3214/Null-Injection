@@ -5,6 +5,8 @@
 #include "states\transition.h"
 #include "states/menu.h"
 #include "states/game.h"
+#include "states/deathState.h"
+#include "states/finalState.h"
 #include "audio\audio.h"
 
 int main(int argc, char* argv[]) {
@@ -26,6 +28,8 @@ int main(int argc, char* argv[]) {
 	showCursor(false);
 	engine.setState(new Transition(new Menu(), 3000, "assets/logo.png", 190, 190, 1000, 1000));
 	// engine.setState(new Game("maps/002.txt", true, -1));
+	// engine.setState(new DeathMenu());
+	// engine.setState(new FinalState(0, 5));
 
 	while (engine.isRunning()) {
 		engine.update();

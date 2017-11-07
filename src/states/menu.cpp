@@ -80,6 +80,10 @@ void Menu::init() {
 	background->tinyGreen0 = new Texture(stateManager->getTextTexture("0", "bg2"));
 	background->tinyGreen1 = new Texture(stateManager->getTextTexture("1", "bg2"));
 	background->populate();
+
+	// set hint text
+	stateManager->createFont("hint", "assets/fonts/munro/Munro.ttf", 16, Colour(155, 155, 155));
+	hintText = new Texture(stateManager->getTextTexture("Use arrow keys and z to select", "hint"));
 }
 
 void Menu::cleanUp() {
@@ -123,12 +127,16 @@ void Menu::update(Uint32 delta) {
 	}
 	else {
 		int fadeOutTimer = SDL_GetTicks() - fadeOutStart;
-		float alphaPercent = static_cast<float>(fadeOutTimer) / static_cast<float>(FADE_OUT_TIME);
+		float alphaPercent = static_cast<float>(fadeOutTimer) / static_cast<float>(MENU_FADE_OUT_TIME);
 		black->setAlpha(static_cast<Uint32>(alphaPercent * 255.f));
-		if (fadeOutTimer >= FADE_OUT_TIME) {
+		if (fadeOutTimer >= MENU_FADE_OUT_TIME) {
 			stateManager->changeState(new Game(false, -1, -1));
 		}
 	}
+	// flash the hint text
+	bool showHint = (SDL_GetTicks() / HINT_INTERVAL) % 2 == 0;
+	if (showHint) hintText->setAlpha(255);
+	else hintText->setAlpha(0);
 }
 
 void Menu::render(SDL_Renderer * renderer) {
@@ -141,6 +149,7 @@ void Menu::render(SDL_Renderer * renderer) {
 	if (renderCredit) renderCredits();
 	// render the title
 	title->render(renderer, MENU_TITLE_X, MENU_TITLE_Y);
+	hintText->render(renderer, HINT_X, HINT_Y);
 	if (fadeOut) black->render(renderer, true);
 	
 }

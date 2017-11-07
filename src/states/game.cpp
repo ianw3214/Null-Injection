@@ -2,6 +2,8 @@
 #include "deathState.h"
 #include "finalState.h"
 
+bool Game::introPlayed = false;
+
 Game::Game(bool resetMusic, int timer, int playerHealth) {
 	startingHealth = playerHealth > 0 ? playerHealth : 5;
 	if (timer < 0) {
@@ -43,7 +45,9 @@ Game::~Game() {
 
 void Game::init() {
 	// hide the cursor
-	// showCursor(false);
+	showCursor(false);
+
+	playerHitTimer = 0;
 
 	miniState = NORMAL;
 	// initialzie the messager
@@ -51,6 +55,7 @@ void Game::init() {
 
 	// fade out things
 	fadeOutBlack = new Texture("assets/black.png", renderer);
+	fadeOutBlack->setAlpha(0);
 	fadeOut = false;
 	fadeOutMusic = false;
 	nextReset = false;
@@ -75,6 +80,10 @@ void Game::init() {
 	// initialize static textures
 	healthTexture = std::make_unique<Texture>("assets/heart.png", renderer);
 
+	// don't play intro again if we've already played it
+	if (introPlayed) {
+		miniState = NORMAL;
+	}
 	if (miniState == INTRO) {
 		black = new Texture("assets/black.png", renderer);
 		introFadeTimes = { 0, 720, 1440, 3840, 4560, 5280, 7680, 8400, 9120, 11520, 12000, 12480, 12960, 13440, 13680, 13920, 14160, 14400, 14640, 14880, 15120, 15360 };
@@ -91,6 +100,7 @@ void Game::init() {
 		warningText->setAlpha(0);
 		warningText2->setAlpha(0);
 		soundPlayed = false;
+		introPlayed = true;
 	}
 
 	shakeTimer = 0;
@@ -189,7 +199,6 @@ void Game::update(Uint32 delta) {
 				warningText->setAlpha(255);
 				warningText2->setAlpha(255);
 				if (!soundPlayed) {
-					LOG("PLAY SOUND");
 					Audio::setVolume(2, SDL_MIX_MAXVOLUME / 2);
 					Audio::playTrack("assets/sfx/alarm.wav", 2, false);
 					soundPlayed = true;
@@ -248,6 +257,7 @@ void Game::update(Uint32 delta) {
 		}
 		return;
 	}
+	// update the player 
 	// play the stage complete state if set
 	if (miniState == COMPLETE) {
 		int timeDiff = SDL_GetTicks() - levelBeatTime;
@@ -282,6 +292,16 @@ void Game::update(Uint32 delta) {
 		// don't return for a complete stage, just add more functionalities
 	}
 	State::update(delta);
+	// update player colour modulation
+	if (playerHitTimer > 0) {
+		playerHitTimer -= static_cast<int>(delta);
+		float percentage = 1.f - static_cast<float>(playerHitTimer) / static_cast<float>(PLAYER_MOD_INTERVAL);
+		if (percentage < 0.f) percentage = 0.f;
+		player->getTexture().setColourModulation(Colour(255, static_cast<Uint8>(percentage * 255.f), static_cast<Uint8>(percentage * 255.f)));
+	}
+	else {
+		player->getTexture().setColourModulation(Colour(255, 255, 255));
+	}
 	// handle player movement
 	if (keyPressed(SDL_SCANCODE_LEFT)) {
 		player->move(1);
@@ -376,6 +396,9 @@ void Game::render(SDL_Renderer * renderer) {
 		for (Enemy * e : enemies) {
 			e->render(renderer);
 		}
+		if (player->getHealth() <= 0) {
+			red->render(renderer, true);
+		}
 		fadeOutBlack->render(renderer, true);
 		return;
 	}
@@ -435,8 +458,13 @@ void Game::processAndPopNextMessage() {
 	// get the message and process it
 	AttackMessage message = attackMessager->dequeue();
 	if (message.target == PLAYER) {
-		if (isColliding(*message.collisionBox, player->getCollisionBox()))
+		if (isColliding(*message.collisionBox, player->getCollisionBox())) {
 			player->takeDamage(message.damage, message.recoilRight);
+			if (player->getHealth() > 0) {
+				playerHitTimer = PLAYER_MOD_INTERVAL;
+				player->getTexture().setColourModulation(Colour(255, 0, 0));
+			}
+		}
 	}
 	if (message.target == ENEMY) {
 		// damage the enemies
@@ -582,7 +610,7 @@ void Game::renderTimer() {
 void Game::nextLevel() {
 	totalTimer += cTimer;
 	if (next == "FINISH") {
-		stateManager->changeState(new FinalState(totalTimer));
+		stateManager->changeState(new FinalState(totalTimer, player->getHealth()));
 	}
 	else {
 		stateManager->changeState(new Game(next, true, totalTimer, player->getHealth()));
