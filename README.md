@@ -1,4 +1,4 @@
-# Fusion Blitz
+# Null Injection
 
 Hackers have invaded the system! Fight your way through hoards of enemies and try not to get killed doing it!
 
